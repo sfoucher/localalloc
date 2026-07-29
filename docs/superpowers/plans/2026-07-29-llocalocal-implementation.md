@@ -16,7 +16,8 @@
 - Package location: repo root (`C:\DEV\CLAUDE\R-Package`), replacing the existing `localalloc` scaffold in place.
 - License: MIT + file LICENSE. Author/Maintainer: Philippe Apparicio <philippe.apparicio@usherbrooke.ca> (`aut`, `cre`).
 - R for all verification commands: `"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe"` (quote the path — it contains no spaces here, but always quote defensively on Windows).
-- Every `devtools::test()`/`devtools::check()` run in this plan must actually be executed and its output checked — this environment starts with only base R + `Matrix` installed; Task 1 installs everything else.
+- Every test/check run in this plan must actually be executed and its output checked — this environment starts with only base R + `Matrix` installed; Task 1 installs everything else.
+- `devtools`/`usethis` are NOT available here: CRAN's Windows binary snapshot for this R version (4.2.1) is frozen, and no Rtools toolchain is installed to compile their `httr2`/`gh` dependency chain from source. Use their already-installed substitutes instead: `pkgload::load_all('.')` for `devtools::load_all()`, `roxygen2::roxygenise('.')` for `devtools::document()`, `testthat::test_dir('tests/testthat')`/`testthat::test_file()` for `devtools::test()`, `rcmdcheck::rcmdcheck('.')` for `devtools::check()`, base `save(x, file = "data/x.rda", compress = "bzip2")` for `usethis::use_data()`, and hand-written files (LICENSE, `.github/workflows/*.yaml`, README.Rmd, NEWS.md) for the `usethis::use_*()` scaffolders.
 - Git: commit locally after each task (per repo convention already established this session). No push — user handles GitHub.
 - `existing_sites` semantics (all models that take it): forced open, contributes to `n_open`, never competes for `p_facilities`/`n_facilities` budget.
 - `matrix_OD_*` long tables default to columns named `from_id`/`to_id`/`distance` but the column names are always parameterized (`matrix_OD_candidates_from_id` etc.) — never hardcode them in a model function, always thread the parameter through to `od_to_matrix()`/`validate_cost_matrix()`.
@@ -54,7 +55,7 @@ data-raw/
   legacy-data.Rdata       Copied from localalloc's old data/data.Rdata (Task 2)
   import-legacy-data.R   Ports the real Bixi dataset (Task 15)
 
-data/                    Generated .rda files (usethis::use_data output) — not hand-written
+data/                    Generated .rda files (base save() output) — not hand-written
 
 tests/testthat/
   helper-fixtures.R   mini_fixture() / competition_fixture() (Task 3)
@@ -73,30 +74,22 @@ tests/testthat/
 
 ---
 
-### Task 1: Environment setup
+### Task 1: Environment setup — COMPLETE (done ahead of the task loop)
 
-**Files:** none (no repo files change — this installs R packages into the R 4.2.1 library)
+**Files:** none (no repo files change — this only concerns the R 4.2.1 library)
 
 **Interfaces:**
-- Produces: a working R environment with `sf`, `ompr`, `ompr.roi`, `ROI`, `ROI.plugin.glpk`, `dplyr`, `devtools`, `usethis`, `testthat`, `roxygen2`, `knitr`, `rmarkdown` installed. Every later task's `Rscript.exe` calls depend on this.
+- Produces: a working R environment with `sf`, `ompr`, `ompr.roi`, `ROI`, `ROI.plugin.glpk`, `dplyr`, `testthat`, `roxygen2`, `pkgload`, `rcmdcheck`, `knitr`, `rmarkdown` installed and verified. Every later task's `Rscript.exe` calls depend on this.
 
-- [ ] **Step 1: Install required packages**
+**What actually happened:** `install.packages()` for the full original list (including `devtools`/`usethis`) was attempted. `devtools`/`usethis` failed: CRAN's Windows binary snapshot for R 4.2 is frozen, there's no Rtools toolchain to compile `httr2`/`gh`'s newer transitive deps (`rlang`, `cli`, etc.) from source, and installing Rtools/upgrading R was out of scope for this plan. Everything else — `sf` 1.0-16, `ompr` 1.0.4, `ompr.roi` 1.0.2, `ROI` 1.0-2, `ROI.plugin.glpk` 1.0-0, `dplyr` 1.1.4, `testthat` 3.2.1.1, `roxygen2` 7.3.1, `pkgload` 1.5.3, `rcmdcheck` 1.4.0, `knitr` 1.39, `rmarkdown` 2.15 — was already present in this R installation's library (left over from prior `localalloc` development) and verified working. See the Global Constraints entry for the substitution table used throughout the rest of this plan.
 
-Run:
+**Verification run:**
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "install.packages(c('sf','ompr','ompr.roi','ROI','ROI.plugin.glpk','dplyr','devtools','usethis','testthat','roxygen2','knitr','rmarkdown'), repos='https://cloud.r-project.org')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgs <- c('sf','ompr','ompr.roi','ROI','ROI.plugin.glpk','Matrix','dplyr','testthat','roxygen2','pkgload','rcmdcheck','knitr','rmarkdown'); ok <- sapply(pkgs, requireNamespace, quietly = TRUE); print(ok); if (!all(ok)) stop('missing packages: ', paste(pkgs[!ok], collapse=', '))"
 ```
-This can take several minutes (binary Windows builds, no compilation expected for `sf` on CRAN for R 4.2.x). Use a long timeout.
+Result: all `TRUE`, no `stop()` triggered.
 
-- [ ] **Step 2: Verify every package loads**
-
-Run:
-```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgs <- c('sf','ompr','ompr.roi','ROI','ROI.plugin.glpk','Matrix','dplyr','devtools','usethis','testthat','roxygen2','knitr','rmarkdown'); ok <- sapply(pkgs, requireNamespace, quietly = TRUE); print(ok); if (!all(ok)) stop('missing packages: ', paste(pkgs[!ok], collapse=', '))"
-```
-Expected: prints `TRUE` for every package, no `stop()` triggered.
-
-No commit — this task doesn't change any repo file.
+No commit — this task doesn't change any repo file. Nothing further to dispatch for this task.
 
 ---
 
@@ -109,7 +102,7 @@ No commit — this task doesn't change any repo file.
 - Delete: `NAMESPACE`, `LICENSE`, `LICENSE.md`, `localalloc.Rproj`, `Package.zip`, `R/lscp.R`, `R/mclp.R`, `R/p_center.R`, `R/p_median.R`, `R/utilitaires.R`, `man/lscp.Rd`, `man/mclp.Rd`, `man/p_center.Rd`, `man/p_median.Rd`, `tests/testthat.R`, `tests/testthat/test-lscp.R`, `data/data.Rdata` (already copied to `data-raw/` first)
 
 **Interfaces:**
-- Produces: a package skeleton that `devtools::load_all()` succeeds on with zero exported functions. Every later task builds on this DESCRIPTION.
+- Produces: a package skeleton that `pkgload::load_all()` succeeds on with zero exported functions. Every later task builds on this DESCRIPTION.
 
 - [ ] **Step 1: Preserve the legacy dataset before deleting the old scaffold**
 
@@ -142,7 +135,7 @@ Description: Implements ten facility-location optimization models
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.1
 Imports:
     sf,
     ompr,
@@ -171,24 +164,66 @@ Write `.Rbuildignore` to:
 ^README\.Rmd$
 ```
 
-- [ ] **Step 5: Generate the MIT license files**
+- [ ] **Step 5: Write the MIT license files by hand**
 
-```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "usethis::use_mit_license('Philippe Apparicio')"
-```
-Expected: creates `LICENSE` and `LICENSE.md` matching the `MIT + file LICENSE` line in DESCRIPTION.
+`usethis` isn't available in this environment (see Global Constraints) — write its standard MIT template directly.
 
-- [ ] **Step 6: Confirm testthat edition-3 scaffolding**
+`LICENSE`:
+```
+YEAR: 2026
+COPYRIGHT HOLDER: Philippe Apparicio
+```
 
+`LICENSE.md`:
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "usethis::use_testthat(3)"
+# MIT License
+
+Copyright (c) 2026 Philippe Apparicio
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
-Expected: no error; `tests/testthat.R` and `tests/testthat/` exist with edition 3 configured (already matches DESCRIPTION's `Config/testthat/edition: 3`).
+
+- [ ] **Step 6: Recreate the testthat scaffold**
+
+Task 2's Step 2 deleted the old `tests/testthat.R`. Write it back (standard testthat scaffold, package name updated):
+
+`tests/testthat.R`:
+```r
+# This file is part of the standard setup for testthat.
+# It is recommended that you do not modify it.
+#
+# Where should you do additional test configuration?
+# Learn more about the roles of various files in:
+# * https://r-pkgs.org/testing-design.html#sec-tests-files-overview
+# * https://testthat.r-lib.org/articles/special-files.html
+
+library(testthat)
+library(llocalocal)
+
+test_check("llocalocal")
+```
+`Config/testthat/edition: 3` is already set in DESCRIPTION (Step 3) and `tests/testthat/` already exists — no other action needed.
 
 - [ ] **Step 7: Verify the empty package loads**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); cat('OK\n')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); cat('OK\n')"
 ```
 Expected: prints `OK` with no errors (R/ is empty at this point, that's fine).
 
@@ -382,7 +417,7 @@ test_that("enumerate_breakpoints sorts, dedupes, and subsamples over the cap", {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-utils.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-utils.R')"
 ```
 Expected: FAIL — `could not find function "validate_sf"` (or similar) for every test.
 
@@ -564,14 +599,14 @@ print.llocalocal_result <- function(x, ...) {
 - [ ] **Step 5: Run tests to verify they pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-utils.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-utils.R')"
 ```
 Expected: all tests PASS, 0 failures.
 
 - [ ] **Step 6: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 
 ```bash
@@ -634,7 +669,7 @@ test_that("lscp errors when a demand point cannot be covered", {
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-lscp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-lscp.R')"
 ```
 Expected: FAIL — `could not find function "lscp"`.
 
@@ -787,14 +822,14 @@ lscp <- function(demand, demand_id, demand_weight = NULL,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-lscp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-lscp.R')"
 ```
 Expected: all tests PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/lscp.R tests/testthat/test-lscp.R NAMESPACE man/
@@ -854,7 +889,7 @@ test_that("mclp does not require full coverability, unlike lscp", {
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-mclp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-mclp.R')"
 ```
 Expected: FAIL — `could not find function "mclp"`.
 
@@ -954,14 +989,14 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-mclp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-mclp.R')"
 ```
 Expected: all tests PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/mclp.R tests/testthat/test-mclp.R NAMESPACE man/
@@ -1007,7 +1042,7 @@ test_that("p_center opens the site minimizing the worst-case distance", {
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-p_center.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-p_center.R')"
 ```
 Expected: FAIL — `could not find function "p_center"`.
 
@@ -1144,14 +1179,14 @@ p_center <- function(demand, demand_id, demand_weight = NULL,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-p_center.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-p_center.R')"
 ```
 Expected: PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/p_center.R tests/testthat/test-p_center.R NAMESPACE man/
@@ -1211,7 +1246,7 @@ test_that("p_median forces existing_sites open and prefers them when closer", {
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-p_median.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-p_median.R')"
 ```
 Expected: FAIL — `could not find function "p_median"`.
 
@@ -1381,14 +1416,14 @@ p_median <- function(demand, demand_id, demand_weight = NULL,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-p_median.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-p_median.R')"
 ```
 Expected: PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/p_median.R tests/testthat/test-p_median.R NAMESPACE man/
@@ -1434,7 +1469,7 @@ test_that("uflp opens the site maximizing total weighted distance (repulsion)", 
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-uflp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-uflp.R')"
 ```
 Expected: FAIL — `could not find function "uflp"`.
 
@@ -1483,14 +1518,14 @@ uflp <- function(demand, demand_id, demand_weight = NULL,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-uflp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-uflp.R')"
 ```
 Expected: PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/uflp.R tests/testthat/test-uflp.R NAMESPACE man/
@@ -1539,7 +1574,7 @@ test_that("ufclp opens both sites when the tradeoff favors it", {
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-ufclp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-ufclp.R')"
 ```
 Expected: FAIL — `could not find function "ufclp"`.
 
@@ -1687,14 +1722,14 @@ ufclp <- function(demand, demand_id, demand_weight = NULL,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-ufclp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-ufclp.R')"
 ```
 Expected: PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/ufclp.R tests/testthat/test-ufclp.R NAMESPACE man/
@@ -1760,7 +1795,7 @@ test_that("cflp errors when total capacity is below total demand", {
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-cflp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-cflp.R')"
 ```
 Expected: FAIL — `could not find function "cflp"`.
 
@@ -1803,14 +1838,14 @@ cflp <- function(demand, demand_id, demand_weight = NULL,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-cflp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-cflp.R')"
 ```
 Expected: PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/cflp.R tests/testthat/test-cflp.R NAMESPACE man/
@@ -1870,7 +1905,7 @@ test_that("dp requires at least 2 facilities", {
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-dp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-dp.R')"
 ```
 Expected: FAIL — `could not find function "dp"`.
 
@@ -1963,14 +1998,14 @@ dp <- function(candidate, candidate_id,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-dp.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-dp.R')"
 ```
 Expected: PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/dp.R tests/testthat/test-dp.R NAMESPACE man/
@@ -2020,7 +2055,7 @@ test_that("maxcap opens the site that captures the most demand from the competit
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-maxcap.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-maxcap.R')"
 ```
 Expected: FAIL — `could not find function "maxcap"`.
 
@@ -2144,14 +2179,14 @@ maxcap <- function(demand, demand_id, demand_weight = NULL,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-maxcap.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-maxcap.R')"
 ```
 Expected: PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/maxcap.R tests/testthat/test-maxcap.R NAMESPACE man/
@@ -2204,7 +2239,7 @@ test_that("pmaxcap finds the exact profit-maximizing price and site", {
 - [ ] **Step 2: Run to verify failure**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-pmaxcap.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-pmaxcap.R')"
 ```
 Expected: FAIL — `could not find function "pmaxcap"`.
 
@@ -2373,14 +2408,14 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
 - [ ] **Step 4: Run to verify pass**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::load_all('.'); testthat::test_file('tests/testthat/test-pmaxcap.R')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_file('tests/testthat/test-pmaxcap.R')"
 ```
 Expected: PASS.
 
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add R/pmaxcap.R tests/testthat/test-pmaxcap.R NAMESPACE man/
@@ -2402,7 +2437,7 @@ scaling discussion)."
 - Generated: `data/sample_demand.rda`, `data/sample_candidates.rda`, `data/sample_existing.rda`, `data/sample_od_candidates.rda`, `data/sample_od_existing.rda`
 
 **Interfaces:**
-- Produces: package datasets `sample_demand`, `sample_candidates`, `sample_existing`, `sample_od_candidates`, `sample_od_existing`, usable directly as `llocalocal::sample_demand` etc. after `devtools::load_all()`/install.
+- Produces: package datasets `sample_demand`, `sample_candidates`, `sample_existing`, `sample_od_candidates`, `sample_od_existing`, usable directly as `llocalocal::sample_demand` etc. after `pkgload::load_all()`/install.
 
 - [ ] **Step 1: Write the generation script**
 
@@ -2412,7 +2447,7 @@ scaling discussion)."
 # sample_candidates / sample_existing / sample_od_candidates /
 # sample_od_existing. Not part of the built package -- run this script
 # once (or whenever the sample data needs regenerating) to (re)produce
-# data/*.rda via usethis::use_data().
+# data/*.rda via base save().
 
 library(sf)
 
@@ -2458,11 +2493,12 @@ sample_existing <- st_as_sf(
 sample_od_candidates <- .euclid_od(sample_demand, sample_candidates)
 sample_od_existing   <- .euclid_od(sample_demand, sample_existing)
 
-usethis::use_data(sample_demand, overwrite = TRUE)
-usethis::use_data(sample_candidates, overwrite = TRUE)
-usethis::use_data(sample_existing, overwrite = TRUE)
-usethis::use_data(sample_od_candidates, overwrite = TRUE)
-usethis::use_data(sample_od_existing, overwrite = TRUE)
+dir.create("data", showWarnings = FALSE)
+save(sample_demand, file = "data/sample_demand.rda", compress = "bzip2")
+save(sample_candidates, file = "data/sample_candidates.rda", compress = "bzip2")
+save(sample_existing, file = "data/sample_existing.rda", compress = "bzip2")
+save(sample_od_candidates, file = "data/sample_od_candidates.rda", compress = "bzip2")
+save(sample_od_existing, file = "data/sample_od_existing.rda", compress = "bzip2")
 ```
 
 - [ ] **Step 2: Run it**
@@ -2494,7 +2530,7 @@ Create/append to `R/data.R`:
 
 ```
 "C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "
-devtools::load_all('.')
+pkgload::load_all('.')
 res <- p_median(
   demand = sample_demand, demand_id = 'id',
   candidate = sample_candidates, candidate_id = 'id',
@@ -2509,7 +2545,7 @@ Expected: prints a `LLOCALOCAL_RESULT`-style summary block with `P_MEDIAN`, `opt
 - [ ] **Step 5: Document and commit**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add data-raw/sample-data.R R/data.R data/ NAMESPACE man/
@@ -2547,11 +2583,11 @@ bixi_existing       <- e$existing_sites
 bixi_od_candidates  <- e$matrix_D_Candidates
 bixi_od_existing    <- e$matrix_D_ExistingSites
 
-usethis::use_data(bixi_candidates, overwrite = TRUE)
-usethis::use_data(bixi_demand, overwrite = TRUE)
-usethis::use_data(bixi_existing, overwrite = TRUE)
-usethis::use_data(bixi_od_candidates, overwrite = TRUE)
-usethis::use_data(bixi_od_existing, overwrite = TRUE)
+save(bixi_candidates, file = "data/bixi_candidates.rda", compress = "bzip2")
+save(bixi_demand, file = "data/bixi_demand.rda", compress = "bzip2")
+save(bixi_existing, file = "data/bixi_existing.rda", compress = "bzip2")
+save(bixi_od_candidates, file = "data/bixi_od_candidates.rda", compress = "bzip2")
+save(bixi_od_existing, file = "data/bixi_od_existing.rda", compress = "bzip2")
 ```
 
 - [ ] **Step 2: Run it**
@@ -2600,7 +2636,7 @@ Append to `R/data.R`:
 
 ```
 "C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "
-devtools::load_all('.')
+pkgload::load_all('.')
 stopifnot(nrow(bixi_candidates) == 5811, nrow(bixi_demand) == 176, nrow(bixi_existing) == 25)
 cat('OK\n')
 "
@@ -2613,7 +2649,7 @@ Expected: prints `OK`.
 rm data-raw/legacy-data.Rdata
 ```
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.')"
 ```
 ```bash
 git add data-raw/import-legacy-data.R R/data.R data/ NAMESPACE man/
@@ -2639,15 +2675,13 @@ per the design spec."
 **Interfaces:**
 - Produces: a rendered `README.md` demonstrating one real model call; `NEWS.md` with the 0.1.0 entry.
 
-- [ ] **Step 1: Generate the README scaffold**
+- [ ] **Step 1: Write README.Rmd directly**
 
-```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "usethis::use_readme_rmd()"
-```
+`usethis` isn't available in this environment (see Global Constraints), so write `README.Rmd` directly rather than generating a placeholder scaffold first — its content is Step 2 below.
 
 - [ ] **Step 2: Write README.Rmd content**
 
-Replace the generated placeholder body with:
+`README.Rmd`:
 ````
 ---
 output: github_document
@@ -2694,16 +2728,15 @@ this package originates from.
 - [ ] **Step 3: Render the README**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::build_readme()"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); rmarkdown::render('README.Rmd')"
 ```
 Expected: generates `README.md` with the example's real output inlined (an actual `LLOCALOCAL_RESULT` printout), no errors.
 
 - [ ] **Step 4: Write NEWS.md**
 
-```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "usethis::use_news_md()"
-```
-Then set its content to:
+Write it directly (no `usethis` scaffolder available — see Global Constraints):
+
+`NEWS.md`:
 ```
 # llocalocal 0.1.0
 
@@ -2721,7 +2754,7 @@ Then set its content to:
 - [ ] **Step 5: Full document() + full test suite run**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::document('.'); devtools::test('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "roxygen2::roxygenise('.'); pkgload::load_all('.'); testthat::test_dir('tests/testthat')"
 ```
 Expected: NAMESPACE/man/ regenerated with all 10 functions + 2 data topics; full test suite (all 12 test files) reports 0 failures.
 
@@ -2742,19 +2775,74 @@ git commit -m "Add README, NEWS, and a full roxygen documentation pass"
 **Interfaces:**
 - Produces: a CI workflow that runs `R CMD check` on push/PR once this repo is pushed to GitHub. Not runnable locally in a meaningful way (no GitHub Actions runner here) — verify by inspection, not execution.
 
-- [ ] **Step 1: Generate the workflow**
+- [ ] **Step 1: Write the workflow by hand**
 
+`usethis` isn't available in this environment (see Global Constraints) — write its standard `check-standard` template directly instead of generating it.
+
+Create `.github/workflows/R-CMD-check.yaml`:
+```yaml
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+name: R-CMD-check.yaml
+
+permissions: read-all
+
+jobs:
+  R-CMD-check:
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: macos-latest,   r: 'release'}
+          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,   r: 'release'}
+          - {os: ubuntu-latest,   r: 'oldrel-1'}
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "usethis::use_github_action('check-standard')"
-```
-Expected: creates `.github/workflows/R-CMD-check.yaml` and (if not already present) `.Rbuildignore` entries for `^\.github$`.
+
+Add `^\.github$` to `.Rbuildignore` if it isn't already there.
 
 - [ ] **Step 2: Verify the workflow file exists and references R-CMD-check**
 
 ```
 "C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "stopifnot(file.exists('.github/workflows/R-CMD-check.yaml')); cat(readLines('.github/workflows/R-CMD-check.yaml'), sep = '\n')"
 ```
-Expected: prints the workflow YAML; confirm it installs R, runs `rcmdcheck`, and matrices at least one OS (the `usethis` template defaults to ubuntu/windows/macOS — leave as generated, don't trim).
+Expected: prints the workflow YAML; confirm it installs R, runs `rcmdcheck` (via `r-lib/actions/check-r-package`), and matrices multiple OSes.
 
 - [ ] **Step 3: Commit**
 
@@ -2767,7 +2855,7 @@ git commit -m "Add GitHub Actions R-CMD-check workflow"
 
 ### Task 18: Final full check and wrap-up
 
-**Files:** none created — verification only, plus any fixes `devtools::check()` surfaces.
+**Files:** none created — verification only, plus any fixes `rcmdcheck::rcmdcheck()` surfaces.
 
 **Interfaces:**
 - Consumes: everything from Tasks 1-17.
@@ -2776,20 +2864,20 @@ git commit -m "Add GitHub Actions R-CMD-check workflow"
 - [ ] **Step 1: Run the full test suite one more time**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::test('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); testthat::test_dir('tests/testthat')"
 ```
 Expected: all 12 test files pass, 0 failures.
 
-- [ ] **Step 2: Run devtools::check()**
+- [ ] **Step 2: Run rcmdcheck::rcmdcheck()**
 
 ```
-"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "devtools::check('.')"
+"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "rcmdcheck::rcmdcheck('.', args = c('--no-manual'))"
 ```
 Expected: 0 errors, 0 warnings. Read every NOTE; fix anything that isn't inherent to being a non-CRAN package (e.g. undocumented arguments, missing `@return`, non-ASCII issues in roxygen — the licensing-note dash characters in `R/data.R` should already be plain ASCII `--`, double-check).
 
 - [ ] **Step 3: Fix any issues found in Step 2**
 
-If `devtools::check()` reports anything beyond expected non-CRAN NOTEs (e.g. "Undocumented arguments", "no visible binding for global variable" from the `ompr` formula syntax, which is expected and can be suppressed with a `# nolint` or by adding the ompr index symbols to a `globalVariables()` call in `R/utils.R` if `R CMD check` flags `i`/`j`/`X`/`Y`/`Z`/`D` as undefined globals):
+If `rcmdcheck::rcmdcheck()` reports anything beyond expected non-CRAN NOTEs (e.g. "Undocumented arguments", "no visible binding for global variable" from the `ompr` formula syntax, which is expected and can be suppressed with a `# nolint` or by adding the ompr index symbols to a `globalVariables()` call in `R/utils.R` if `R CMD check` flags `i`/`j`/`X`/`Y`/`Z`/`D` as undefined globals):
 
 ```r
 # Add near the top of R/utils.R if check flags this:
@@ -2804,8 +2892,8 @@ Re-run Step 2 after any fix until clean.
 git add -A
 git commit -m "llocalocal 0.1.0: all 10 models implemented, tested, documented, CI configured
 
-Passes devtools::check() with 0 errors/warnings. Ready to push to a
-private GitHub repository (user-initiated, per the design spec)."
+Passes rcmdcheck::rcmdcheck() with 0 errors/warnings. Ready to push to
+a private GitHub repository (user-initiated, per the design spec)."
 ```
 
 ---
