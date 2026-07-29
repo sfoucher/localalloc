@@ -2,6 +2,7 @@
 
 S3method(print,llocalocal_result)
 export(cflp)
+export(dp)
 export(lscp)
 export(mclp)
 export(p_center)
