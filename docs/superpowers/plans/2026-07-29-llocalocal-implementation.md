@@ -397,7 +397,7 @@ test_that("validate_fixed_cost and validate_capacity reject bad columns", {
 
 test_that("derive_competitor_baseline takes the row-wise minimum", {
   mat <- matrix(c(1, 5, 2, 3), nrow = 2)
-  expect_equal(derive_competitor_baseline(mat), c(1, 2))
+  expect_equal(derive_competitor_baseline(mat), c(1, 3))  # column-major fill: row1=[1,2], row2=[5,3]
 })
 
 test_that("enumerate_breakpoints sorts, dedupes, and subsamples over the cap", {
