@@ -2,3 +2,4 @@
 
 S3method(print,llocalocal_result)
 export(lscp)
+export(mclp)
