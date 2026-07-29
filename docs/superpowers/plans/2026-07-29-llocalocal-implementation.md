@@ -2815,6 +2815,11 @@ this package originates from.
 ```
 Expected: generates `README.md` with the example's real output inlined (an actual `LLOCALOCAL_RESULT` printout), no errors.
 
+**If this fails with an `xfun`/`isFALSE`-related error:** this environment's CRAN binary snapshot for R 4.2 is frozen at `xfun` 0.43, which is incompatible with the installed `knitr`/`rmarkdown` versions, and 0.60+ needs compilation (no Rtools available) — the same class of ceiling as the `devtools`/`usethis` gap in the Global Constraints. `rmarkdown::render()` cannot work in this environment; don't keep retrying it. Instead, hand-produce `README.md` to look exactly like what a real render would output:
+1. Run the "Example" chunk's actual R code via Rscript and capture its real printed output verbatim.
+2. Assemble `README.md` matching standard `github_document` conventions: prose sections copied as-is from `README.Rmd`, the "Installation" code block as a plain ```` ```r ```` fence (not executed — it's illustrative), the "Example" chunk rendered as a ```` ```r ```` fence containing the source followed immediately by a plain ```` ``` ```` fence containing the captured output with each line prefixed `#>` (matching the Rmd's `knitr::opts_chunk$set(comment = "#>")`).
+`README.Rmd` itself needs no changes — it's still the correct buildable source for anyone with a working `rmarkdown` setup; only `README.md`'s generation method changes in this environment.
+
 - [ ] **Step 4: Write NEWS.md**
 
 Write it directly (no `usethis` scaffolder available — see Global Constraints):
