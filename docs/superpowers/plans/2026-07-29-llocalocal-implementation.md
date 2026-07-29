@@ -2063,7 +2063,9 @@ dp <- function(candidate, candidate_id,
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
   X_vals <- ompr::get_solution(result, X[j])$value
-  D_val <- ompr::get_solution(result, D)$value
+  D_val <- as.numeric(ompr::get_solution(result, D))  # D is a scalar var; get_solution() returns
+                                                       # an atomic vector for those, not a data.frame
+                                                       # with a $value column (same pattern as Z in p_center.R)
   selected_j <- which(round(X_vals) == 1)
   ids_selected <- ids_cand[selected_j]
   sf_selected <- candidate[as.character(candidate[[candidate_id]]) %in% ids_selected, , drop = FALSE]
