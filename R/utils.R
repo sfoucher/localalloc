@@ -4,6 +4,7 @@
 utils::globalVariables(c("i", "j", "X", "Y", "Z", "D"))
 
 #' @import ROI.plugin.glpk
+#' @importFrom sf st_geometry
 #' @noRd
 NULL
 
