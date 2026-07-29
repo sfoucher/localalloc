@@ -21,6 +21,7 @@
 - Git: commit locally after each task (per repo convention already established this session). No push — user handles GitHub.
 - `existing_sites` semantics (all models that take it): forced open, contributes to `n_open`, never competes for `p_facilities`/`n_facilities` budget.
 - `matrix_OD_*` long tables default to columns named `from_id`/`to_id`/`distance` but the column names are always parameterized (`matrix_OD_candidates_from_id` etc.) — never hardcode them in a model function, always thread the parameter through to `od_to_matrix()`/`validate_cost_matrix()`.
+- `ompr::solve_model()` + `ompr.roi::with_ROI(solver = "glpk")` in this environment returns `result$status == "success"` for an optimal solve, not `"optimal"` (verified directly: a trivial feasible MIP returns `"success"`; an infeasible one returns `"error"`). Every status check in this plan compares against `"success"` — this was a real bug ported verbatim from `localalloc`'s original code (which checked `!= "optimal"` and fired a spurious warning on every successful solve) and was caught and fixed during Task 6's review, then corrected everywhere else in this plan before those tasks were dispatched.
 
 ---
 
@@ -802,7 +803,7 @@ lscp <- function(demand, demand_id, demand_weight = NULL,
     ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
     error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
   )
-  if (result$status != "optimal")
+  if (result$status != "success")
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
   X_vals <- ompr::get_solution(result, X[j])$value
@@ -1040,7 +1041,7 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
     ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
     error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
   )
-  if (result$status != "optimal")
+  if (result$status != "success")
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
   X_vals <- ompr::get_solution(result, X[j])$value
@@ -1226,7 +1227,7 @@ p_center <- function(demand, demand_id, demand_weight = NULL,
     ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
     error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
   )
-  if (result$status != "optimal")
+  if (result$status != "success")
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
   Y_vals <- ompr::get_solution(result, Y[i, j])
@@ -1422,7 +1423,7 @@ Expected: FAIL — `could not find function "p_median"`.
     ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
     error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
   )
-  if (result$status != "optimal")
+  if (result$status != "success")
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
   Y_vals <- ompr::get_solution(result, Y[i, j])
@@ -1721,7 +1722,7 @@ Expected: FAIL — `could not find function "ufclp"`.
     ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
     error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
   )
-  if (result$status != "optimal")
+  if (result$status != "success")
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
   X_vals <- ompr::get_solution(result, X[j])$value
@@ -2052,7 +2053,7 @@ dp <- function(candidate, candidate_id,
     ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
     error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
   )
-  if (result$status != "optimal")
+  if (result$status != "success")
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
   X_vals <- ompr::get_solution(result, X[j])$value
@@ -2232,7 +2233,7 @@ maxcap <- function(demand, demand_id, demand_weight = NULL,
     ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
     error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
   )
-  if (result$status != "optimal")
+  if (result$status != "success")
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
   X_vals <- ompr::get_solution(result, X[j])$value
@@ -2448,7 +2449,7 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
       ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
       error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
     )
-    if (result$status == "optimal") {
+    if (result$status == "success") {
       profit <- ompr::objective_value(result)
       if (profit > best$profit) {
         best <- list(profit = profit, price = price,
