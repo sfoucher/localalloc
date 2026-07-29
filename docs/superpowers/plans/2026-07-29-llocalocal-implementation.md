@@ -1499,17 +1499,19 @@ git commit -m "Add uflp() via the shared .assignment_model() builder"
 
 ---
 
-### Task 9: ufclp()
+### Task 9: ufclp() and the shared .fixed_charge_model() builder
 
 **Files:**
-- Create: `R/ufclp.R`
+- Create: `R/ufclp.R` (defines both `ufclp()` and internal `.fixed_charge_model()`)
 - Create: `tests/testthat/test-ufclp.R`
 
 **Interfaces:**
-- Consumes: `validate_sf()`, `validate_fixed_cost()`, `validate_cost_matrix()`, `od_to_matrix()`, `replace_inf()`, `set_weights()`, `extract_assignment()`, `build_result()` (Task 3); `mini_fixture()` (tests)
-- Produces: `ufclp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", cutoff_distance = 1000, candidate_fixed_cost, transport_cost_rate = 1, solver = "glpk")` → `llocalocal_result` with fields `assignments`, `fixed_cost_total`, `transport_cost_total`, `total_cost`, `n_open`
+- Consumes: `validate_sf()`, `validate_fixed_cost()`, `validate_capacity()`, `validate_cost_matrix()`, `od_to_matrix()`, `replace_inf()`, `set_weights()`, `extract_assignment()`, `build_result()` (Task 3); `mini_fixture()` (tests)
+- Produces:
+  - `.fixed_charge_model(demand, demand_id, demand_weight, candidate, candidate_id, candidate_weight, matrix_OD_candidates, matrix_OD_candidates_from_id, matrix_OD_candidates_to_id, matrix_OD_candidates_dist, cutoff_distance, candidate_fixed_cost, candidate_capacity, transport_cost_rate, solver, model_type)` → `llocalocal_result` — internal, not exported. `candidate_capacity = NULL` means uncapacitated. Consumed by both `ufclp()` (this task) and `cflp()` (Task 10).
+  - `ufclp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", cutoff_distance = 1000, candidate_fixed_cost, transport_cost_rate = 1, solver = "glpk")` → `llocalocal_result` with fields `assignments`, `fixed_cost_total`, `transport_cost_total`, `total_cost`, `n_open`, `n_demand`
 
-**Note:** no `existing_sites` and no `p_facilities` for this model — facility count is endogenous (traded off against fixed cost), and Required Facilities don't have a natural meaning when opening is itself a cost decision.
+**Note:** no `existing_sites` and no `p_facilities` for this model — facility count is endogenous (traded off against fixed cost), and Required Facilities don't have a natural meaning when opening is itself a cost decision. `cflp()` (Task 10) is `ufclp()` plus one capacity constraint — same rationale as `.assignment_model()` in Task 7, this is factored into one internal builder rather than duplicated across two files.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1544,6 +1546,97 @@ Expected: FAIL — `could not find function "ufclp"`.
 - [ ] **Step 3: Implement R/ufclp.R**
 
 ```r
+.fixed_charge_model <- function(demand, demand_id, demand_weight,
+                                 candidate, candidate_id, candidate_weight,
+                                 matrix_OD_candidates, matrix_OD_candidates_from_id,
+                                 matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
+                                 cutoff_distance, candidate_fixed_cost, candidate_capacity,
+                                 transport_cost_rate, solver, model_type) {
+
+  validate_sf(candidate, "candidate", candidate_id)
+  validate_sf(demand, "demand", demand_id)
+  validate_fixed_cost(candidate, candidate_fixed_cost)
+  has_capacity <- !is.null(candidate_capacity)
+  if (has_capacity) validate_capacity(candidate, candidate_capacity)
+
+  if (!is.numeric(transport_cost_rate) || transport_cost_rate < 0)
+    stop("`transport_cost_rate` must be a non-negative number.")
+
+  validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
+                       matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
+                       name = "matrix_OD_candidates")
+
+  demand <- set_weights(demand, demand_id, demand_weight, "demand")
+  weight_col <- if (is.null(demand_weight)) "weight" else demand_weight
+  a <- as.numeric(demand[[weight_col]])
+
+  ids_demand <- as.character(demand[[demand_id]])
+  ids_cand   <- as.character(candidate[[candidate_id]])
+  n_cli <- length(ids_demand); n_fac <- length(ids_cand)
+  f_cost <- as.numeric(candidate[[candidate_fixed_cost]])
+
+  if (has_capacity) {
+    k_cap <- as.numeric(candidate[[candidate_capacity]])
+    if (sum(k_cap) < sum(a))
+      stop(sprintf(
+        "Total capacity (%.2f) is less than total demand (%.2f) -- no feasible assignment exists.",
+        sum(k_cap), sum(a)
+      ))
+  }
+
+  cost_mat <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
+                           matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
+                           cutoff_distance)
+  cost_mat <- replace_inf(cost_mat[ids_demand, ids_cand, drop = FALSE])
+
+  model <- ompr::MIPModel() |>
+    ompr::add_variable(X[j], j = 1:n_fac, type = "binary") |>
+    ompr::add_variable(Y[i, j], i = 1:n_cli, j = 1:n_fac, type = "continuous", lb = 0, ub = 1) |>
+    ompr::set_objective(
+      ompr::sum_expr(f_cost[j] * X[j], j = 1:n_fac) +
+        transport_cost_rate * ompr::sum_expr(a[i] * cost_mat[i, j] * Y[i, j],
+                                             i = 1:n_cli, j = 1:n_fac),
+      sense = "min"
+    ) |>
+    ompr::add_constraint(ompr::sum_expr(Y[i, j], j = 1:n_fac) == 1, i = 1:n_cli) |>
+    ompr::add_constraint(Y[i, j] <= X[j], i = 1:n_cli, j = 1:n_fac)
+
+  if (has_capacity)
+    model <- ompr::add_constraint(
+      model, ompr::sum_expr(a[i] * Y[i, j], i = 1:n_cli) <= k_cap[j] * X[j], j = 1:n_fac
+    )
+
+  message(sprintf("%s | %d demand points | %d candidates | solver: %s",
+                  toupper(model_type), n_cli, n_fac, solver))
+
+  result <- tryCatch(
+    ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
+    error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
+  )
+  if (result$status != "optimal")
+    warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
+
+  X_vals <- ompr::get_solution(result, X[j])$value
+  Y_vals <- ompr::get_solution(result, Y[i, j])
+  selected_j <- which(round(X_vals) == 1)
+  ids_selected <- ids_cand[selected_j]
+
+  assignments <- extract_assignment(Y_vals, ids_demand, ids_cand, cost_mat)
+  fixed_cost_total <- sum(f_cost[selected_j])
+  transport_cost_total <- transport_cost_rate *
+    sum(a * ifelse(is.finite(assignments$distance), assignments$distance, 0), na.rm = TRUE)
+
+  sf_selected <- candidate[as.character(candidate[[candidate_id]]) %in% ids_selected, , drop = FALSE]
+
+  build_result(
+    model_type = model_type, solver_status = result$status, sf_selected = sf_selected,
+    assignments = assignments, fixed_cost_total = fixed_cost_total,
+    transport_cost_total = transport_cost_total,
+    total_cost = fixed_cost_total + transport_cost_total,
+    n_open = length(ids_selected), n_demand = n_cli
+  )
+}
+
 #' Uncapacitated Fixed-charge Facility Location Problem (UFCLP)
 #'
 #' Chooses which candidate sites to open, trading off each site's fixed
@@ -1579,71 +1672,14 @@ ufclp <- function(demand, demand_id, demand_weight = NULL,
                    candidate_fixed_cost,
                    transport_cost_rate = 1,
                    solver = "glpk") {
-
-  validate_sf(candidate, "candidate", candidate_id)
-  validate_sf(demand, "demand", demand_id)
-  validate_fixed_cost(candidate, candidate_fixed_cost)
-
-  if (!is.numeric(transport_cost_rate) || transport_cost_rate < 0)
-    stop("`transport_cost_rate` must be a non-negative number.")
-
-  validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
-                       matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                       name = "matrix_OD_candidates")
-
-  demand <- set_weights(demand, demand_id, demand_weight, "demand")
-  weight_col <- if (is.null(demand_weight)) "weight" else demand_weight
-  a <- as.numeric(demand[[weight_col]])
-
-  ids_demand <- as.character(demand[[demand_id]])
-  ids_cand   <- as.character(candidate[[candidate_id]])
-  n_cli <- length(ids_demand); n_fac <- length(ids_cand)
-  f_cost <- as.numeric(candidate[[candidate_fixed_cost]])
-
-  cost_mat <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
-                           matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                           cutoff_distance)
-  cost_mat <- replace_inf(cost_mat[ids_demand, ids_cand, drop = FALSE])
-
-  model <- ompr::MIPModel() |>
-    ompr::add_variable(X[j], j = 1:n_fac, type = "binary") |>
-    ompr::add_variable(Y[i, j], i = 1:n_cli, j = 1:n_fac, type = "continuous", lb = 0, ub = 1) |>
-    ompr::set_objective(
-      ompr::sum_expr(f_cost[j] * X[j], j = 1:n_fac) +
-        transport_cost_rate * ompr::sum_expr(a[i] * cost_mat[i, j] * Y[i, j],
-                                             i = 1:n_cli, j = 1:n_fac),
-      sense = "min"
-    ) |>
-    ompr::add_constraint(ompr::sum_expr(Y[i, j], j = 1:n_fac) == 1, i = 1:n_cli) |>
-    ompr::add_constraint(Y[i, j] <= X[j], i = 1:n_cli, j = 1:n_fac)
-
-  message(sprintf("UFCLP | %d demand points | %d candidates | solver: %s", n_cli, n_fac, solver))
-
-  result <- tryCatch(
-    ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
-    error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
-  )
-  if (result$status != "optimal")
-    warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
-
-  X_vals <- ompr::get_solution(result, X[j])$value
-  Y_vals <- ompr::get_solution(result, Y[i, j])
-  selected_j <- which(round(X_vals) == 1)
-  ids_selected <- ids_cand[selected_j]
-
-  assignments <- extract_assignment(Y_vals, ids_demand, ids_cand, cost_mat)
-  fixed_cost_total <- sum(f_cost[selected_j])
-  transport_cost_total <- transport_cost_rate *
-    sum(a * ifelse(is.finite(assignments$distance), assignments$distance, 0), na.rm = TRUE)
-
-  sf_selected <- candidate[as.character(candidate[[candidate_id]]) %in% ids_selected, , drop = FALSE]
-
-  build_result(
-    model_type = "ufclp", solver_status = result$status, sf_selected = sf_selected,
-    assignments = assignments, fixed_cost_total = fixed_cost_total,
-    transport_cost_total = transport_cost_total,
-    total_cost = fixed_cost_total + transport_cost_total,
-    n_open = length(ids_selected), n_demand = n_cli
+  .fixed_charge_model(
+    demand, demand_id, demand_weight,
+    candidate, candidate_id, candidate_weight,
+    matrix_OD_candidates, matrix_OD_candidates_from_id,
+    matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
+    cutoff_distance, candidate_fixed_cost, candidate_capacity = NULL,
+    transport_cost_rate = transport_cost_rate, solver = solver,
+    model_type = "ufclp"
   )
 }
 ```
@@ -1662,11 +1698,14 @@ Expected: PASS.
 ```
 ```bash
 git add R/ufclp.R tests/testthat/test-ufclp.R NAMESPACE man/
-git commit -m "Add ufclp()
+git commit -m "Add ufclp() and the shared .fixed_charge_model() builder
 
 Y[i,j] is continuous [0,1] rather than binary, per the thesis
 formulation (eq. 2.20) -- exact due to the assignment substructure's
-total unimodularity, not an approximation."
+total unimodularity, not an approximation. .fixed_charge_model()
+factors out the shape common to ufclp() and cflp() (Task 10) --
+same fixed-charge assignment problem, cflp() adds one capacity
+constraint."
 ```
 
 ---
@@ -1678,7 +1717,7 @@ total unimodularity, not an approximation."
 - Create: `tests/testthat/test-cflp.R`
 
 **Interfaces:**
-- Consumes: `validate_sf()`, `validate_fixed_cost()`, `validate_capacity()`, `validate_cost_matrix()`, `od_to_matrix()`, `replace_inf()`, `set_weights()`, `extract_assignment()`, `build_result()` (Task 3); `mini_fixture()` (tests)
+- Consumes: `.fixed_charge_model()` (Task 9, internal — same `R/` namespace, no import needed); `mini_fixture()` (tests)
 - Produces: `cflp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", cutoff_distance = 1000, candidate_fixed_cost, candidate_capacity, transport_cost_rate = 1, solver = "glpk")` → `llocalocal_result` (same fields as `ufclp()`)
 
 - [ ] **Step 1: Write the failing tests**
@@ -1749,82 +1788,14 @@ cflp <- function(demand, demand_id, demand_weight = NULL,
                   candidate_capacity,
                   transport_cost_rate = 1,
                   solver = "glpk") {
-
-  validate_sf(candidate, "candidate", candidate_id)
-  validate_sf(demand, "demand", demand_id)
-  validate_fixed_cost(candidate, candidate_fixed_cost)
-  validate_capacity(candidate, candidate_capacity)
-
-  if (!is.numeric(transport_cost_rate) || transport_cost_rate < 0)
-    stop("`transport_cost_rate` must be a non-negative number.")
-
-  validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
-                       matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                       name = "matrix_OD_candidates")
-
-  demand <- set_weights(demand, demand_id, demand_weight, "demand")
-  weight_col <- if (is.null(demand_weight)) "weight" else demand_weight
-  a <- as.numeric(demand[[weight_col]])
-
-  ids_demand <- as.character(demand[[demand_id]])
-  ids_cand   <- as.character(candidate[[candidate_id]])
-  n_cli <- length(ids_demand); n_fac <- length(ids_cand)
-  f_cost <- as.numeric(candidate[[candidate_fixed_cost]])
-  k_cap  <- as.numeric(candidate[[candidate_capacity]])
-
-  if (sum(k_cap) < sum(a))
-    stop(sprintf(
-      "Total capacity (%.2f) is less than total demand (%.2f) -- no feasible assignment exists.",
-      sum(k_cap), sum(a)
-    ))
-
-  cost_mat <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
-                           matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                           cutoff_distance)
-  cost_mat <- replace_inf(cost_mat[ids_demand, ids_cand, drop = FALSE])
-
-  model <- ompr::MIPModel() |>
-    ompr::add_variable(X[j], j = 1:n_fac, type = "binary") |>
-    ompr::add_variable(Y[i, j], i = 1:n_cli, j = 1:n_fac, type = "continuous", lb = 0, ub = 1) |>
-    ompr::set_objective(
-      ompr::sum_expr(f_cost[j] * X[j], j = 1:n_fac) +
-        transport_cost_rate * ompr::sum_expr(a[i] * cost_mat[i, j] * Y[i, j],
-                                             i = 1:n_cli, j = 1:n_fac),
-      sense = "min"
-    ) |>
-    ompr::add_constraint(ompr::sum_expr(Y[i, j], j = 1:n_fac) == 1, i = 1:n_cli) |>
-    ompr::add_constraint(Y[i, j] <= X[j], i = 1:n_cli, j = 1:n_fac) |>
-    ompr::add_constraint(
-      ompr::sum_expr(a[i] * Y[i, j], i = 1:n_cli) <= k_cap[j] * X[j], j = 1:n_fac
-    )
-
-  message(sprintf("CFLP | %d demand points | %d candidates | solver: %s", n_cli, n_fac, solver))
-
-  result <- tryCatch(
-    ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
-    error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
-  )
-  if (result$status != "optimal")
-    warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
-
-  X_vals <- ompr::get_solution(result, X[j])$value
-  Y_vals <- ompr::get_solution(result, Y[i, j])
-  selected_j <- which(round(X_vals) == 1)
-  ids_selected <- ids_cand[selected_j]
-
-  assignments <- extract_assignment(Y_vals, ids_demand, ids_cand, cost_mat)
-  fixed_cost_total <- sum(f_cost[selected_j])
-  transport_cost_total <- transport_cost_rate *
-    sum(a * ifelse(is.finite(assignments$distance), assignments$distance, 0), na.rm = TRUE)
-
-  sf_selected <- candidate[as.character(candidate[[candidate_id]]) %in% ids_selected, , drop = FALSE]
-
-  build_result(
-    model_type = "cflp", solver_status = result$status, sf_selected = sf_selected,
-    assignments = assignments, fixed_cost_total = fixed_cost_total,
-    transport_cost_total = transport_cost_total,
-    total_cost = fixed_cost_total + transport_cost_total,
-    n_open = length(ids_selected), n_demand = n_cli
+  .fixed_charge_model(
+    demand, demand_id, demand_weight,
+    candidate, candidate_id, candidate_weight,
+    matrix_OD_candidates, matrix_OD_candidates_from_id,
+    matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
+    cutoff_distance, candidate_fixed_cost, candidate_capacity,
+    transport_cost_rate = transport_cost_rate, solver = solver,
+    model_type = "cflp"
   )
 }
 ```
@@ -1843,7 +1814,7 @@ Expected: PASS.
 ```
 ```bash
 git add R/cflp.R tests/testthat/test-cflp.R NAMESPACE man/
-git commit -m "Add cflp()"
+git commit -m "Add cflp() via the shared .fixed_charge_model() builder"
 ```
 
 ---
@@ -2845,7 +2816,7 @@ private GitHub repository (user-initiated, per the design spec)."
 - Package identity (name, author, license, language, location) — Task 2. ✅
 - Unified input contract for the original 4 — Tasks 4-7. ✅
 - The 6 new models, their per-model input deltas, competition rule, PMAXCAP algorithm — Tasks 8-13. ✅
-- Internal architecture (`R/utils.R`, `build_result()`, `print.llocalocal_result()`, `.assignment_model()`) — Tasks 3, 7. ✅
+- Internal architecture (`R/utils.R`, `build_result()`, `print.llocalocal_result()`, `.assignment_model()`, `.fixed_charge_model()`) — Tasks 3, 7, 9. ✅
 - Two datasets + provenance/licensing note — Tasks 14-15. ✅
 - Error handling — built into every model task via the shared validators (Task 3). ✅
 - Testing (testthat ed. 3, one file per function + utils) — every task. ✅
@@ -2855,5 +2826,7 @@ private GitHub repository (user-initiated, per the design spec)."
 
 **Placeholder scan:** no TBD/TODO; every step has runnable commands or complete code; no "similar to Task N" shortcuts — every model function is written out in full even where it resembles another.
 
-**Type consistency:** `build_result(model_type, solver_status, sf_selected, ...)` signature is identical everywhere it's called (Tasks 4-13). `.assignment_model()`'s parameter list (Task 7) matches exactly what `uflp()` (Task 8) passes positionally. `llocalocal_result` field names (`total_cost`, `max_distance`, `covered_demand`, `min_distance`, `optimal_price`, `profit`, `assignments`, `n_open`, `n_demand`) are used consistently between each model's `build_result()` call and `print.llocalocal_result()` (Task 3).
+**Type consistency:** `build_result(model_type, solver_status, sf_selected, ...)` signature is identical everywhere it's called (Tasks 4-13). `.assignment_model()`'s parameter list (Task 7) matches exactly what `uflp()` (Task 8) passes positionally; `.fixed_charge_model()`'s parameter list (Task 9) matches exactly what `cflp()` (Task 10) passes positionally, including the `candidate_capacity = NULL` uncapacitated-mode convention `ufclp()` (Task 9) also relies on. `llocalocal_result` field names (`total_cost`, `max_distance`, `covered_demand`, `min_distance`, `optimal_price`, `profit`, `assignments`, `n_open`, `n_demand`) are used consistently between each model's `build_result()` call and `print.llocalocal_result()` (Task 3).
+
+**Pre-flight fix (before dispatch):** Tasks 9-10 originally wrote `cflp()` as a near-verbatim duplicate of `ufclp()` — the same DRY gap Task 7 already solved for `p_median()`/`uflp()`. Refactored into `.fixed_charge_model()` (mirroring `.assignment_model()`) before any implementer was dispatched, so the review loop doesn't have to catch it twice.
 
