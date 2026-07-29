@@ -135,6 +135,7 @@ Description: Implements ten facility-location optimization models
     PMAXCAP) as integer linear programs, solved via ompr and ROI.
 License: MIT + file LICENSE
 Encoding: UTF-8
+LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 Imports:
