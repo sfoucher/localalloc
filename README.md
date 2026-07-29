@@ -14,7 +14,7 @@ devtools::install_local(".")
 ## Example
 
 ```r
-library(llocalocal)
+suppressPackageStartupMessages(library(llocalocal))
 
 res <- p_median(
   demand = sample_demand, demand_id = "id",
