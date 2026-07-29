@@ -1,14 +1,15 @@
-Package: localalloc
-Title: Facility Location Optimization in R
+Package: llocalocal
+Title: Facility Location Optimization Models in R
 Version: 0.1.0
-Authors@R: 
-    person("Marie-Hélène", "Gadbois-Del Carpio", , "Marie-Helene.Gadbois.Del.Carpio@USherbrooke.ca", role = c("aut", "cre"))
-Description: Implements facility location models (LSCP, MCLP, P-Median, P-Center)
-    using integer linear programming via ompr and ROI.
+Authors@R:
+    person("Philippe", "Apparicio", , "philippe.apparicio@usherbrooke.ca", role = c("aut", "cre"))
+Description: Implements ten facility-location optimization models
+    (P-Median, P-Center, MCLP, LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP,
+    PMAXCAP) as integer linear programs, solved via ompr and ROI.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 8.0.0
+RoxygenNote: 7.3.1
 Imports:
     sf,
     ompr,
@@ -18,7 +19,8 @@ Imports:
     Matrix,
     dplyr
 Suggests:
-    tmap,
-    ggplot2,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 Config/testthat/edition: 3
+VignetteBuilder: knitr
