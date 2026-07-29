@@ -1307,8 +1307,14 @@ test_that("p_median forces existing_sites open and prefers them when closer", {
     existing_sites = fx$existing, existing_sites_id = "id",
     matrix_OD_candidates = fx$od_candidates,
     matrix_OD_existing_site = fx$od_existing,
+    matrix_OD_existing_site_from_id = "from_id",
+    matrix_OD_existing_site_to_id = "to_id",
+    matrix_OD_existing_site_dist = "distance",
     p_facilities = 1
   )
+  # matrix_OD_existing_site_from_id/to_id/dist must be passed explicitly --
+  # they default to NULL (existing_sites is optional here), so validate_cost_matrix()
+  # would reject a NULL column name if they're left out.
   # E2 is 0.5 from everyone -- always cheaper than any candidate, so every
   # demand point is assigned to E2 regardless of which candidate opens.
   expect_equal(res$total_cost, 1.5)
