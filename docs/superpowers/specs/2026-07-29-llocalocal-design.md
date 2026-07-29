@@ -100,6 +100,31 @@ convention, scripts not part of the built package):
    existing structure/column names; documented as a realistic large-scale
    example.
 
+### Provenance (from `Essai_MarieHelene.pdf`, the source thesis)
+
+This dataset is the case study from the thesis this package originates from:
+BIXI bike-share station siting in the Fleurimont/Nations boroughs of
+Sherbrooke, QC. `existing_sites` = the 25 real Bixi stations (BIXI open
+data). `candidate_sites` = 5,811 candidate sites from OSM street segments
+(cycleway/living_street/footway/residential), cut into 100 m lixels,
+excluding slope > 5%. `demand_pop` = 176 dissemination-area (2021 census)
+centroids, weight = population aged 15-64 at residence (open, via
+`cancensus`) **plus** jobs at workplace. OD matrices = walking travel times
+computed via `r5r` on an OSM+DEM network.
+
+**Licensing flag, resolved:** the jobs-at-workplace figure folded into
+`demand_pop$weight` comes from "a special compilation purchased from
+Statistics Canada," not open data, and the two components are already
+summed into one column (can't be separated post hoc). Raised with the user;
+decision was to bundle the dataset as-is, on the user's own authority over
+that data's usage terms — flagged here for traceability, not left as a
+silent assumption. Carry a short provenance/licensing note in `R/data.R`'s
+roxygen docs for `demand_pop` so downstream users see it too.
+
+Suggested object names (clearer than the generic legacy names, and it's a
+straight rename in the port script, not a design risk): `bixi_candidates`,
+`bixi_demand`, `bixi_existing`, `bixi_od_candidates`, `bixi_od_existing`.
+
 ## Error handling
 
 Every function validates through the shared `utils.R` helpers before
@@ -122,6 +147,12 @@ get the same guarantees instead of only `p_median`.
   inspection) plus coverage of the validation error paths
 - `localalloc` shipped `testthat` scaffolding with an empty test file —
   this rewrite actually fills it in
+
+## Guidelines followed
+
+Standard `usethis`/`devtools`/`roxygen2`/`testthat` workflow per Wickham &
+Bryan, *R Packages* (2e) — the same reference the source thesis cites for
+package development practice.
 
 ## CI / tooling
 
