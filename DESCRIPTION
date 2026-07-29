@@ -1,0 +1,24 @@
+Package: localalloc
+Title: Facility Location Optimization in R
+Version: 0.1.0
+Authors@R: 
+    person("Marie-Hélène", "Gadbois-Del Carpio", , "Marie-Helene.Gadbois.Del.Carpio@USherbrooke.ca", role = c("aut", "cre"))
+Description: Implements facility location models (LSCP, MCLP, P-Median, P-Center)
+    using integer linear programming via ompr and ROI.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Imports:
+    sf,
+    ompr,
+    ompr.roi,
+    ROI,
+    ROI.plugin.glpk,
+    Matrix,
+    dplyr
+Suggests:
+    tmap,
+    ggplot2,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
