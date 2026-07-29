@@ -1,3 +1,12 @@
+# The ompr formula syntax below (X[j], Y[i, j], D, Z, ...) uses bare symbols
+# that R CMD check's static analysis cannot resolve as local bindings; they
+# are ompr's index/variable notation, not undefined globals.
+utils::globalVariables(c("i", "j", "X", "Y", "Z", "D"))
+
+#' @import ROI.plugin.glpk
+#' @noRd
+NULL
+
 validate_sf <- function(obj, name, id_col) {
   if (!inherits(obj, "sf"))
     stop(sprintf("`%s` must be an sf object.", name))
