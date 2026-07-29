@@ -33,9 +33,10 @@ mclp(
 
 \item{demand_id}{character. Unique id column in \code{demand}.}
 
-\item{demand_weight}{character or NULL. Weight column in \code{demand}.
-Unused by LSCP's objective (full coverage is required regardless of
-weight) but validated for consistency with the other models.}
+\item{demand_weight}{character or NULL. Weight column in \code{demand} (e.g.
+population). This is the primary driver of MCLP's objective --
+candidates are chosen to maximize total weighted covered demand.
+Defaults to 1 if NULL.}
 
 \item{candidate}{sf POINT. Candidate facility sites.}
 
@@ -70,7 +71,9 @@ into the solution.}
 
 \item{service_radius}{numeric. Maximum acceptable distance.}
 
-\item{p_facilities}{integer. Number of facilities to open.}
+\item{p_facilities}{integer. Number of \emph{new} facilities to open (the
+budget applies only to \code{candidate}, not to forced-open
+\code{existing_sites}).}
 
 \item{solver}{character. ROI solver, default \code{"glpk"}.}
 }
@@ -83,4 +86,8 @@ demand covered within \code{service_radius}. Unlike \code{\link[=lscp]{lscp()}},
 of every demand point is not required -- demand that can't be reached
 by any candidate within the radius is simply left uncovered, which is
 the point of "maximal" coverage rather than total coverage.
+\code{existing_sites}, if supplied, are treated as already open: they
+contribute coverage for free and don't consume the \code{p_facilities}
+budget (same Required Facilities semantics as \code{\link[=lscp]{lscp()}}/\code{\link[=p_median]{p_median()}}/
+\code{\link[=p_center]{p_center()}}).
 }
