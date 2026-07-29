@@ -78,7 +78,7 @@ below), no nonlinear/MINLP solver dependency added.
 | `cflp()` | `ufclp()` + a capacity constraint per facility | `candidate_capacity` (column in `candidate`, k_j) |
 | `dp()` | **Different shape** — no `demand`/`existing_sites` at all, purely site-to-site | `candidate` + `candidate_id` + `matrix_OD_candidates` (here meaning candidate-candidate distances) + `p_facilities` |
 | `maxcap()` | Unified contract; `existing_sites` now required (= competitor sites) | `p_facilities` read as "at most p" (eq. 2.35 uses `<=`, not `=`) |
-| `pmaxcap()` | `maxcap()` + pricing | `marginal_cost` (v), `distance_cost_rate` (t), `competitor_price` (P_B), `n_facilities` (n_A, "exactly n_A" per eq. 2.38), `max_breakpoints` (default 2000) |
+| `pmaxcap()` | `maxcap()` + pricing | `marginal_cost` (v), `distance_cost_rate` (t), `competitor_price` (P_B), `n_facilities` (n_A, "exactly n_A" per eq. 2.38), `candidate_fixed_cost` (optional, f_j, defaults to 0 — eq. 2.36 includes a fixed-cost term the first pass of this table missed), `max_breakpoints` (default 2000) |
 
 **`uflp()`** — reverse p-median: same assignment/budget constraints (eqs.
 2.27-2.29), objective flipped to maximize total weighted assigned distance,
