@@ -15,7 +15,7 @@ file) and unifies all four functions onto one input contract.
 ## Package identity
 
 - Name: `llocalocal`
-- Author/maintainer: Samuel Foucher <samuel.foucher@gmail.com> (`aut`, `cre`)
+- Author/maintainer: Philippe Apparicio <philippe.apparicio@usherbrooke.ca> (`aut`, `cre`)
 - License: MIT + file LICENSE
 - Language: English (roxygen docs, `stop()`/`warning()` messages)
 - Location: this repo root, replacing the current `localalloc` scaffold
