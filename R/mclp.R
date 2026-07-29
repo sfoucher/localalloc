@@ -122,7 +122,7 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
     ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
     error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
   )
-  if (result$status != "optimal")
+  if (result$status != "success")
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
   X_vals <- ompr::get_solution(result, X[j])$value
