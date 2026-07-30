@@ -37,5 +37,52 @@ res
 #>
 ```
 
-See `?bixi-data` for the real-world Sherbrooke Bixi bike-share dataset
-this package originates from.
+## Example with the real Sherbrooke Bixi dataset
+
+The package also bundles the real-world case study it originates from:
+5,811 candidate sites, 176 demand points, and 25 existing Bixi
+bike-share stations in Sherbrooke, QC (see `?bixi-data` for full
+provenance and a data-licensing note). `existing_sites` are treated as
+Required Facilities -- forced open, and excluded automatically (with a
+warning) from `candidate` where the two overlap.
+
+This is a real ~5,800-variable MIP, not a toy example -- expect it to
+take a few minutes to solve with the default `glpk` solver.
+
+```r
+res <- mclp(
+  demand = bixi_demand, demand_id = "id", demand_weight = "weight",
+  candidate = bixi_candidates, candidate_id = "id",
+  existing_sites = bixi_existing, existing_sites_id = "id",
+  matrix_OD_candidates = bixi_od_candidates,
+  matrix_OD_candidates_from_id = "from_id",
+  matrix_OD_candidates_to_id = "to_id",
+  matrix_OD_candidates_dist = "travel_time_p50",
+  matrix_OD_existing_site = bixi_od_existing,
+  matrix_OD_existing_site_from_id = "from_id",
+  matrix_OD_existing_site_to_id = "to_id",
+  matrix_OD_existing_site_dist = "travel_time_p50",
+  cutoff_distance = 130,
+  service_radius = 15, p_facilities = 10
+)
+res
+```
+```
+#> MCLP | 176 demand points | 5786 candidates | radius = 15 | p = 10 | 25 existing (forced) | solver: glpk
+#> Warning message:
+#> In mclp(demand = bixi_demand, demand_id = "id", demand_weight = "weight",  :
+#>   25 id(s) appear in both `candidate` and `existing_sites`; excluding them from `candidate` since they are already open: 1075, 1076, 1077, 1078, 1079, 1080, 1081, 1082, 1083, 1084, 1085, 1086, 1087, 1088, 1089, 1090, 1091, 1092, 1093, 1094, 1095, 1096, 1097, 1098, 1099
+#>
+#> =======================================================
+#>   Model         : MCLP
+#>   Solver status : success
+#> -------------------------------------------------------
+#>   Facilities open : 35
+#>   Covered demand   : 67050.00
+#> =======================================================
+#>
+```
+
+10 new stations plus the 25 existing ones cover 67,050 of the 74,200
+total weighted demand (population + jobs) -- about 90%, opening only
+10 new sites within a 15-minute walk.
