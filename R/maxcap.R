@@ -6,6 +6,9 @@
 #' switches to any newly opened candidate that is closer.
 #'
 #' @inheritParams lscp
+#' @param demand_weight character or NULL. Weight column in `demand` (e.g.
+#'   population). This drives the objective -- captured demand is weighted
+#'   by this column. Defaults to 1 if NULL.
 #' @param existing_sites sf POINT. The competitor's sites (required).
 #' @param existing_sites_id character. Unique id column in `existing_sites`.
 #' @param matrix_OD_existing_site data.frame. Required.
@@ -67,13 +70,13 @@ maxcap <- function(demand, demand_id, demand_weight = NULL,
 
   cost_mat_cand <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                                 matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                                cutoff_distance)
-  cost_mat_cand <- replace_inf(cost_mat_cand[ids_demand, ids_cand, drop = FALSE])
+                                cutoff_distance, ids_from = ids_demand, ids_to = ids_cand)
+  cost_mat_cand <- replace_inf(cost_mat_cand)
 
   cost_mat_exist <- od_to_matrix(matrix_OD_existing_site, matrix_OD_existing_site_from_id,
                                  matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist,
-                                 cutoff_distance)
-  cost_mat_exist <- replace_inf(cost_mat_exist[ids_demand, ids_exist, drop = FALSE])
+                                 cutoff_distance, ids_from = ids_demand, ids_to = ids_exist)
+  cost_mat_exist <- replace_inf(cost_mat_exist)
 
   baseline <- derive_competitor_baseline(cost_mat_exist)
 

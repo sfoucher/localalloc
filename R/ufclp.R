@@ -38,8 +38,8 @@
 
   cost_mat <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                            matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                           cutoff_distance)
-  cost_mat <- replace_inf(cost_mat[ids_demand, ids_cand, drop = FALSE])
+                           cutoff_distance, ids_from = ids_demand, ids_to = ids_cand)
+  cost_mat <- replace_inf(cost_mat)
 
   model <- ompr::MIPModel() |>
     ompr::add_variable(X[j], j = 1:n_fac, type = "binary") |>

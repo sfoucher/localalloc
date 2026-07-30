@@ -5,7 +5,7 @@ print.llocalocal_result <- function(x, ...) {
   cat(sprintf("  Model         : %s\n", toupper(x$model_type)))
   cat(sprintf("  Solver status : %s\n", x$solver_status))
   cat("-------------------------------------------------------\n")
-  cat(sprintf("  Facilities open : %d\n", nrow(x$sf_selected)))
+  cat(sprintf("  Facilities open : %d\n", if (!is.null(x$n_open)) x$n_open else nrow(x$sf_selected)))
   if (!is.null(x$total_cost))       cat(sprintf("  Total cost       : %.2f\n", x$total_cost))
   if (!is.null(x$max_distance))     cat(sprintf("  Max distance     : %.2f\n", x$max_distance))
   if (!is.null(x$covered_demand))   cat(sprintf("  Covered demand   : %.2f\n", x$covered_demand))

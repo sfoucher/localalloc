@@ -41,15 +41,16 @@ validate_cost_matrix <- function(od, from_id, to_id, dist, name = "matrix_OD") {
   invisible(TRUE)
 }
 
-od_to_matrix <- function(od, from_id, to_id, dist, cutoff = 1000) {
-  ids_from <- unique(od[[from_id]])
-  ids_to   <- unique(od[[to_id]])
+od_to_matrix <- function(od, from_id, to_id, dist, cutoff = 1000, ids_from = NULL, ids_to = NULL) {
+  if (is.null(ids_from)) ids_from <- unique(od[[from_id]])
+  if (is.null(ids_to))   ids_to   <- unique(od[[to_id]])
   mat <- matrix(Inf, nrow = length(ids_from), ncol = length(ids_to),
                 dimnames = list(ids_from, ids_to))
   od_valid <- od[od[[dist]] <= cutoff, ]
   idx_from <- match(od_valid[[from_id]], ids_from)
   idx_to   <- match(od_valid[[to_id]], ids_to)
-  mat[cbind(idx_from, idx_to)] <- od_valid[[dist]]
+  keep <- !is.na(idx_from) & !is.na(idx_to)
+  mat[cbind(idx_from[keep], idx_to[keep])] <- od_valid[[dist]][keep]
   mat
 }
 

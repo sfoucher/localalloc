@@ -42,8 +42,7 @@ dp <- function(candidate, candidate_id,
 
   dist_mat <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                            matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                           cutoff = Inf)
-  dist_mat <- dist_mat[ids_cand, ids_cand, drop = FALSE]
+                           cutoff = Inf, ids_from = ids_cand, ids_to = ids_cand)
   diag(dist_mat) <- 0
   dist_mat <- replace_inf(dist_mat)
   big_m <- max(dist_mat) * 2

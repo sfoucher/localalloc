@@ -4,6 +4,9 @@
 #' distance between any demand point and its assigned facility (minimax).
 #'
 #' @inheritParams lscp
+#' @param demand_weight character or NULL. Weight column in `demand`.
+#'   Unused by P-Center's objective (the minimax criterion doesn't weight
+#'   demand) -- not validated, since it has no effect.
 #' @param p_facilities integer. Number of facilities to open.
 #' @return An object of class `llocalocal_result`.
 #' @export
@@ -35,9 +38,13 @@ p_center <- function(demand, demand_id, demand_weight = NULL,
       stop("`matrix_OD_existing_site` is required when `existing_sites` is supplied.")
     collision <- intersect(as.character(candidate[[candidate_id]]),
                            as.character(existing_sites[[existing_sites_id]]))
-    if (length(collision) > 0)
-      stop(sprintf("Ids shared between `candidate` and `existing_sites`: %s",
-                   paste(collision, collapse = ", ")))
+    if (length(collision) > 0) {
+      warning(sprintf(
+        "%d id(s) appear in both `candidate` and `existing_sites`; excluding them from `candidate` since they are already open: %s",
+        length(collision), paste(collision, collapse = ", ")
+      ))
+      candidate <- candidate[!as.character(candidate[[candidate_id]]) %in% collision, , drop = FALSE]
+    }
   }
 
   if (!is.numeric(p_facilities) || p_facilities < 1)
@@ -61,16 +68,14 @@ p_center <- function(demand, demand_id, demand_weight = NULL,
 
   cost_mat_cand <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                                 matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                                cutoff_distance)
-  cost_mat_cand <- cost_mat_cand[ids_demand, ids_cand, drop = FALSE]
+                                cutoff_distance, ids_from = ids_demand, ids_to = ids_cand)
 
   if (has_existing) {
     ids_exist <- as.character(existing_sites[[existing_sites_id]])
     n_exist <- length(ids_exist)
     cost_mat_exist <- od_to_matrix(matrix_OD_existing_site, matrix_OD_existing_site_from_id,
                                    matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist,
-                                   cutoff_distance)
-    cost_mat_exist <- cost_mat_exist[ids_demand, ids_exist, drop = FALSE]
+                                   cutoff_distance, ids_from = ids_demand, ids_to = ids_exist)
     ids_all_fac <- c(ids_cand, ids_exist)
     cost_mat_all <- cbind(cost_mat_cand, cost_mat_exist)
   } else {

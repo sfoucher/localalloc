@@ -37,9 +37,9 @@ pmaxcap(
 
 \item{demand_id}{character. Unique id column in \code{demand}.}
 
-\item{demand_weight}{character or NULL. Weight column in \code{demand}.
-Unused by LSCP's objective (full coverage is required regardless of
-weight) but validated for consistency with the other models.}
+\item{demand_weight}{character or NULL. Weight column in \code{demand} (e.g.
+population). This drives the objective -- captured demand is weighted
+by this column. Defaults to 1 if NULL.}
 
 \item{candidate}{sf POINT. Candidate facility sites.}
 

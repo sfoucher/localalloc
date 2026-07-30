@@ -34,7 +34,7 @@ lscp(
 
 \item{demand_weight}{character or NULL. Weight column in \code{demand}.
 Unused by LSCP's objective (full coverage is required regardless of
-weight) but validated for consistency with the other models.}
+weight) -- not validated, since it has no effect.}
 
 \item{candidate}{sf POINT. Candidate facility sites.}
 

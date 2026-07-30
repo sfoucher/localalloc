@@ -32,9 +32,10 @@ uflp(
 
 \item{demand_id}{character. Unique id column in \code{demand}.}
 
-\item{demand_weight}{character or NULL. Weight column in \code{demand}.
-Unused by LSCP's objective (full coverage is required regardless of
-weight) but validated for consistency with the other models.}
+\item{demand_weight}{character or NULL. Weight column in \code{demand} (e.g.
+population). This is the primary driver of the objective -- candidates
+are chosen to minimize (p_median) or maximize (uflp) total weighted
+assigned distance. Defaults to 1 if NULL.}
 
 \item{candidate}{sf POINT. Candidate facility sites.}
 

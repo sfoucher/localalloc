@@ -27,6 +27,16 @@ test_that("od_to_matrix builds a wide matrix with Inf beyond cutoff", {
   expect_true(is.infinite(mat["d1", "c2"]))
 })
 
+test_that("od_to_matrix() with ids_from/ids_to handles ids absent from the OD table", {
+  od <- data.frame(from_id = c("d1", "d1"), to_id = c("c1", "c2"), distance = c(1, 100))
+  mat <- od_to_matrix(od, "from_id", "to_id", "distance", cutoff = 10,
+                       ids_from = c("d1", "d2"), ids_to = c("c1", "c2", "c3"))
+  expect_equal(dim(mat), c(2, 3))
+  expect_equal(mat["d1", "c1"], 1)
+  expect_true(all(is.infinite(mat["d2", ])))
+  expect_true(all(is.infinite(mat[, "c3"])))
+})
+
 test_that("replace_inf swaps Inf for a large finite value", {
   mat <- matrix(c(1, Inf, 2, 3), nrow = 2)
   out <- replace_inf(mat)
