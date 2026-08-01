@@ -49,22 +49,26 @@ solution → return `structure(list(...), class = "llocalocal_result")`. Check
 the actual function/NAMESPACE before assuming a helper name — this file has
 drifted from the code before and will again.
 
-**Two input conventions coexist**:
-- `lscp`, `mclp`, `p_center` take a precomputed numeric `cost_matrix` (clients
-  × facilities) directly.
-- `p_median` takes raw `sf` POINT layers (`candidate`, `demand`, optional
-  `existing_sites`) plus long-format origin-destination `data.frame`s
-  (`matrix_OD_candidates`, optional `matrix_OD_existing_site`), and builds the
-  cost matrix itself via `.od_to_matrix()`. It also supports "Required
-  Facilities": `existing_sites` are forced open (`X[j] == 1`) in the ILP
-  rather than competing for the budget.
+All 10 models share one input contract: raw `sf` POINT layers
+(`candidate`, `demand`, optional `existing_sites`) plus long-format
+origin-destination `data.frame`s (`matrix_OD_candidates`, optional
+`matrix_OD_existing_site`), turned into a cost matrix via
+`od_to_matrix()`. Models that support `existing_sites` force them open
+("Required Facilities", `X[j] == 1`) rather than competing for the
+budget — except `maxcap`/`pmaxcap`, where `existing_sites` is the
+*competitor* instead. `dp()` is the odd one out: no demand layer at
+all, just a candidate-to-candidate distance table.
 
 Key shared helpers in `utils.R` (all internal, no roxygen `@export`):
 - `validate_sf()` / `validate_cost_matrix()` — input validation, English `stop()`/`warning()` messages.
 - `od_to_matrix()` — long OD `data.frame` → wide matrix, `Inf` for missing/over-cutoff pairs.
 - `replace_inf()` — swaps `Inf` for a large finite value (solver compatibility).
 - `make_coverage_matrix()` — distance matrix → binary coverage matrix for LSCP/MCLP.
-- `set_weights()` — fills missing weight columns on `sf` objects with 1.
+- `set_weights()` — when `weight_col` is NULL, *overwrites* the `weight`
+  column with 1 (even if one already has real data) rather than only
+  filling it if absent. Intentional "unweighted by default" design, but
+  looks like a bug if you forget to pass `demand_weight = "weight"` and
+  wonder why a capacity/weighting constraint isn't binding.
 - `extract_assignment()` / `build_result_sf()` — turn `ompr::get_solution()` output back into `data.frame`/`sf` results.
 
 Full test coverage exists — one `test-<model>.R` per model plus
