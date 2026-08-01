@@ -54,6 +54,41 @@ res
 #> =======================================================
 ```
 
+Version with a subsampled bixi dataset:
+
+``` r
+devtools::load_all(".", quiet = TRUE)
+data(bixi_candidates); data(bixi_demand)
+data(bixi_od_candidates)
+
+set.seed(1)
+sub_ids <- bixi_candidates$id[seq(1, nrow(bixi_candidates), by = 10)]
+cand_sub <- bixi_candidates[bixi_candidates$id %in% sub_ids, ]
+od_sub <- bixi_od_candidates[bixi_od_candidates$to_id %in% sub_ids, ]
+
+cat(sprintf("candidates=%d demand=%d od_rows=%d\n",
+            nrow(cand_sub), nrow(bixi_demand), nrow(od_sub)))
+
+t0 <- Sys.time()
+res <- p_median(
+  demand = bixi_demand, demand_id = "id",
+  candidate = cand_sub, candidate_id = "id",
+  matrix_OD_candidates = od_sub,
+  matrix_OD_candidates_from_id = "from_id",
+  matrix_OD_candidates_to_id = "to_id",
+  matrix_OD_candidates_dist = "travel_time_p50",
+  cutoff_distance = 1000,
+  p_facilities = 5,
+  solver = "glpk"
+)
+t1 <- Sys.time()
+elapsed <- difftime(t1, t0)
+cat(sprintf("ELAPSED: %.2f %s\n", as.numeric(elapsed), units(elapsed)))
+cat("n_open:", res$n_open, " total_cost:", res$total_cost, "\n")
+print(res$sf_selected$id)
+# p_median on subsampled bixi (582 candidates × 176 demand, p=5, glpk): 13.92 min. 5 sites opened, total cost 3913.
+```
+
 ### P-Center
 
 Shares P-Median’s setup and constraints, but minimizes the *maximum*

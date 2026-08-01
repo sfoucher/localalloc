@@ -4,14 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`localalloc` — an R package implementing facility location optimization models
-(LSCP, MCLP, P-Median, P-Center) as integer linear programs, solved via `ompr`
-+ `ROI`/`ROI.plugin.glpk`. Author: Marie-Hélène Gadbois-Del Carpio (USherbrooke).
+`llocalocal` — an R package implementing ten facility-location optimization
+models (LSCP, MCLP, P-Median, P-Center, UFCLP, CFLP, DP, UFLP, MAXCAP,
+PMAXCAP) as integer linear programs, solved via `ompr` +
+`ROI`/`ROI.plugin.glpk`. Author: Philippe Apparicio (USherbrooke). All ten
+are exported; result objects carry class `llocalocal_result`.
 
 The repo root *is* the package root (DESCRIPTION, NAMESPACE, R/, man/, tests/
-at top level). `Package.zip` in the root is the original delivery archive this
-was unpacked from — the unpacked source is now what's tracked; the zip is
-redundant and can be deleted once you've confirmed nothing else depends on it.
+at top level). `data-raw/` holds the scripts that generated `data/*.rda`
+(`import-legacy-data.R` for the real `bixi_*` case study, `sample-data.R`
+for the small `sample_*` fixtures).
 
 ## Common commands
 
@@ -26,34 +28,26 @@ devtools::check()         # full R CMD check
 
 Single test file: `testthat::test_file("tests/testthat/test-lscp.R")`.
 
-There is no build/test tooling outside of R itself (no Makefile, no CI config).
+CI runs R CMD check on push/PR via `.github/workflows/R-CMD-check.yaml`
+(r-lib/actions). No Makefile.
 
 ## Architecture
 
-Four model functions, one shared helper file:
+Ten model functions (`R/lscp.R`, `mclp.R`, `p_center.R`, `p_median.R`,
+`ufclp.R`, `cflp.R`, `dp.R`, `uflp.R`, `maxcap.R`, `pmaxcap.R`), one shared
+internal helper file `R/utils.R` (validation, matrix building, result
+extraction, English-language `stop()`/`warning()` messages), plus `R/print.R`
+(`print.llocalocal_result`) and `R/visualize.R` (`plot_sites()` — interactive
+`mapview` map of candidate/demand/existing sf layers; `mapview` is a
+`Suggests`, guarded by `requireNamespace()`).
 
-- `R/lscp.R` — `lscp()`: minimum facilities to cover all demand within a radius.
-- `R/mclp.R` — `mclp()`: maximize demand covered with a fixed facility budget.
-- `R/p_center.R` — `p_center()`: minimize the worst-case (max) client-facility distance.
-- `R/p_median.R` — `p_median()`: minimize total weighted distance; the most
-  developed of the four (see below).
-- `R/utilitaires.R` — internal (`.`-prefixed) helpers shared by all four models,
-  plus `print.localalloc_result`.
-
-All four follow the same shape: validate inputs → build an `ompr::MIPModel()`
+All models follow the same shape: validate inputs → build an `ompr::MIPModel()`
 with binary `X[j]` (facility open) and, for assignment models, `Y[i,j]`
 (client-facility assignment) variables → solve with
 `ompr.roi::with_ROI(solver = solver)` (default `"glpk"`) → extract the
-solution → return `structure(list(...), class = "localalloc_result")`.
-
-**Export status matters here**: NAMESPACE currently exports only `p_median`
-(plus the `print.localalloc_result` S3 method). `lscp`, `mclp`, and `p_center`
-have no `@export` tag and aren't in NAMESPACE — they're not part of the public
-API yet. They also call `.build_result()`, which is not defined anywhere in
-`R/utilitaires.R` (only `.build_result_sf()` is) — these three are unfinished/
-non-functional as written. Don't assume they work; check before building on
-them, and run `devtools::document()` after adding `@export` tags if you wire
-one up.
+solution → return `structure(list(...), class = "llocalocal_result")`. Check
+the actual function/NAMESPACE before assuming a helper name — this file has
+drifted from the code before and will again.
 
 **Two input conventions coexist**:
 - `lscp`, `mclp`, `p_center` take a precomputed numeric `cost_matrix` (clients
@@ -65,16 +59,21 @@ one up.
   Facilities": `existing_sites` are forced open (`X[j] == 1`) in the ILP
   rather than competing for the budget.
 
-Key shared helpers in `utilitaires.R` (all internal, no roxygen `@export`):
-- `.validate_sf()` / `.validate_cost_matrix()` — input validation, French-language `stop()`/`warning()` messages (the whole package's user-facing messages are in French).
-- `.od_to_matrix()` — long OD `data.frame` → wide matrix, `Inf` for missing/over-cutoff pairs.
-- `.replace_inf()` — swaps `Inf` for a large finite value (solver compatibility).
-- `.make_coverage_matrix()` — distance matrix → binary coverage matrix for LSCP/MCLP.
-- `.set_weights()` — fills missing weight columns on `sf` objects with 1.
-- `.extract_assignment()` / `.build_result_sf()` — turn `ompr::get_solution()` output back into `data.frame`/`sf` results.
+Key shared helpers in `utils.R` (all internal, no roxygen `@export`):
+- `validate_sf()` / `validate_cost_matrix()` — input validation, English `stop()`/`warning()` messages.
+- `od_to_matrix()` — long OD `data.frame` → wide matrix, `Inf` for missing/over-cutoff pairs.
+- `replace_inf()` — swaps `Inf` for a large finite value (solver compatibility).
+- `make_coverage_matrix()` — distance matrix → binary coverage matrix for LSCP/MCLP.
+- `set_weights()` — fills missing weight columns on `sf` objects with 1.
+- `extract_assignment()` / `build_result_sf()` — turn `ompr::get_solution()` output back into `data.frame`/`sf` results.
 
-`tests/testthat/test-lscp.R` exists but is empty — there is no real test
-coverage yet despite the `testthat` scaffolding being in place.
+Full test coverage exists — one `test-<model>.R` per model plus
+`test-utils.R` and `helper-fixtures.R`.
 
-`data/data.Rdata` holds example/sample data for the package (not inspected in
-detail — check its contents with `load()` before relying on its structure).
+`data/bixi_*.rda` — real Sherbrooke Bixi case study (5,811 candidates × 176
+demand pts × 25 existing stations; OD tables use `from_id`/`to_id`/
+`travel_time_p50` columns). Running an assignment model (e.g. `p_median()`)
+at full bixi scale builds ~1M binary `Y[i,j]` vars via `ompr` and OOM-crashes
+silently (no R error, ~4 min in, ~16GB RAM box) — subsample `candidate`
+(and the matching OD rows) before timing/testing at this scale.
+`data/sample_*.rda` — small fixtures for quick manual runs.
