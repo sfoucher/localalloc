@@ -3,9 +3,10 @@
 
 Ten facility-location optimization models (P-Median, P-Center, MCLP,
 LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP) as integer linear
-programs, solved via `ompr` and `ROI.plugin.glpk`. The models follow the
-theoretical framework in `Essai_MarieHelene.pdf`, the thesis this
-package originates from.
+programs, built as sparse matrices and solved directly via `Rglpk` or
+`highs` (the default – faster than `glpk` on these problems). The models
+follow the theoretical framework in `Essai_MarieHelene.pdf`, the thesis
+this package originates from.
 
 ## Installation
 
@@ -42,51 +43,19 @@ res <- p_median(
   matrix_OD_candidates = sample_od_candidates,
   p_facilities = 3
 )
-#> P_MEDIAN | 15 demand points | 12 candidates (p=3) | solver: glpk
+#> P_MEDIAN | building cost matrix (15 demand points x 12 candidates)...
+#> P_MEDIAN | building sparse MIP...
+#> P_MEDIAN | solving | 15 demand points | 12 candidates (p=3) | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : P_MEDIAN
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 3
 #>   Total cost       : 36.96
+#>   Processing time  : 0.35s
 #> =======================================================
-```
-
-Version with a subsampled bixi dataset:
-
-``` r
-devtools::load_all(".", quiet = TRUE)
-data(bixi_candidates); data(bixi_demand)
-data(bixi_od_candidates)
-
-set.seed(1)
-sub_ids <- bixi_candidates$id[seq(1, nrow(bixi_candidates), by = 10)]
-cand_sub <- bixi_candidates[bixi_candidates$id %in% sub_ids, ]
-od_sub <- bixi_od_candidates[bixi_od_candidates$to_id %in% sub_ids, ]
-
-cat(sprintf("candidates=%d demand=%d od_rows=%d\n",
-            nrow(cand_sub), nrow(bixi_demand), nrow(od_sub)))
-
-t0 <- Sys.time()
-res <- p_median(
-  demand = bixi_demand, demand_id = "id",
-  candidate = cand_sub, candidate_id = "id",
-  matrix_OD_candidates = od_sub,
-  matrix_OD_candidates_from_id = "from_id",
-  matrix_OD_candidates_to_id = "to_id",
-  matrix_OD_candidates_dist = "travel_time_p50",
-  cutoff_distance = 1000,
-  p_facilities = 5,
-  solver = "glpk"
-)
-t1 <- Sys.time()
-elapsed <- difftime(t1, t0)
-cat(sprintf("ELAPSED: %.2f %s\n", as.numeric(elapsed), units(elapsed)))
-cat("n_open:", res$n_open, " total_cost:", res$total_cost, "\n")
-print(res$sf_selected$id)
-# p_median on subsampled bixi (582 candidates × 176 demand, p=5, glpk): 13.92 min. 5 sites opened, total cost 3913.
 ```
 
 ### P-Center
@@ -103,15 +72,18 @@ res <- p_center(
   matrix_OD_candidates = sample_od_candidates,
   p_facilities = 3
 )
-#> P_CENTER | 15 demand points | 12 candidates (p=3) | solver: glpk
+#> P_CENTER | building cost matrix (15 demand points x 12 candidates)...
+#> P_CENTER | building sparse MIP...
+#> P_CENTER | solving | 15 demand points | 12 candidates (p=3) | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : P_CENTER
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 3
 #>   Max distance     : 4.06
+#>   Processing time  : 0.06s
 #> =======================================================
 ```
 
@@ -130,8 +102,8 @@ provenance and a data-licensing note). `existing_sites` are treated as
 Required Facilities – forced open, and excluded automatically (with a
 warning) from `candidate` where the two overlap.
 
-This is a real ~5,800-variable MIP, not a toy example – expect it to
-take a few minutes to solve with the default `glpk` solver.
+This is a real ~5,800-variable MIP, not a toy example – it solves in
+about 2 seconds with the default `highs` solver.
 
 ``` r
 res <- mclp(
@@ -154,15 +126,17 @@ res <- mclp(
 #> them from `candidate` since they are already open: 1075, 1076, 1077, 1078,
 #> 1079, 1080, 1081, 1082, 1083, 1084, 1085, 1086, 1087, 1088, 1089, 1090, 1091,
 #> 1092, 1093, 1094, 1095, 1096, 1097, 1098, 1099
-#> MCLP | 176 demand points | 5786 candidates | radius = 15 | p = 10 | 25 existing (forced) | solver: glpk
+#> MCLP | building sparse MIP...
+#> MCLP | solving | 176 demand points | 5786 candidates | radius = 15 | p = 10 | 25 existing (forced) | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : MCLP
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 35
 #>   Covered demand   : 67050.00
+#>   Processing time  : 2.36s
 #> =======================================================
 ```
 
@@ -183,14 +157,16 @@ res <- lscp(
   matrix_OD_candidates = sample_od_candidates,
   service_radius = 6
 )
-#> LSCP | 15 demand points | 12 candidates | radius = 6 | solver: glpk
+#> LSCP | building sparse MIP...
+#> LSCP | solving | 15 demand points | 12 candidates | radius = 6 | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : LSCP
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 3
+#>   Processing time  : 0.00s
 #> =======================================================
 ```
 
@@ -209,15 +185,18 @@ res <- ufclp(
   matrix_OD_candidates = sample_od_candidates,
   candidate_fixed_cost = "fixed_cost"
 )
-#> UFCLP | 15 demand points | 12 candidates | solver: glpk
+#> UFCLP | building cost matrix (15 demand points x 12 candidates)...
+#> UFCLP | building sparse MIP...
+#> UFCLP | solving | 15 demand points | 12 candidates | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : UFCLP
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 7
 #>   Total cost       : 3547.22
+#>   Processing time  : 0.01s
 #> =======================================================
 ```
 
@@ -236,15 +215,18 @@ res <- cflp(
   candidate_fixed_cost = "fixed_cost",
   candidate_capacity = "capacity"
 )
-#> CFLP | 15 demand points | 12 candidates | solver: glpk
+#> CFLP | building cost matrix (15 demand points x 12 candidates)...
+#> CFLP | building sparse MIP...
+#> CFLP | solving | 15 demand points | 12 candidates | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : CFLP
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 10
 #>   Total cost       : 4093.48
+#>   Processing time  : 0.01s
 #> =======================================================
 ```
 
@@ -273,15 +255,17 @@ res <- dp(
   matrix_OD_candidates = od_candidates_dp,
   p_facilities = 4
 )
-#> DP | 12 candidates | p = 4 | solver: glpk
+#> DP | building sparse MIP...
+#> DP | solving | 12 candidates | p = 4 | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : DP
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 4
 #>   Min pair distance: 657047.22
+#>   Processing time  : 0.03s
 #> =======================================================
 ```
 
@@ -299,15 +283,18 @@ res <- uflp(
   matrix_OD_candidates = sample_od_candidates,
   p_facilities = 3
 )
-#> UFLP | 15 demand points | 12 candidates (p=3) | solver: glpk
+#> UFLP | building cost matrix (15 demand points x 12 candidates)...
+#> UFLP | building sparse MIP...
+#> UFLP | solving | 15 demand points | 12 candidates (p=3) | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : UFLP
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 3
 #>   Total cost       : 18841.00
+#>   Processing time  : 0.01s
 #> =======================================================
 ```
 
@@ -327,15 +314,17 @@ res <- maxcap(
   matrix_OD_existing_site = sample_od_existing,
   p_facilities = 3
 )
-#> MAXCAP | 15 demand points | 12 candidates (<= 3) | solver: glpk
+#> MAXCAP | building sparse MIP...
+#> MAXCAP | solving | 15 demand points | 12 candidates (<= 3) | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : MAXCAP
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 3
 #>   Covered demand   : 1725.00
+#>   Processing time  : 0.00s
 #> =======================================================
 ```
 
@@ -356,16 +345,17 @@ res <- pmaxcap(
   matrix_OD_existing_site = sample_od_existing,
   competitor_price = 10, n_facilities = 2
 )
-#> PMAXCAP | 15 demand points | 12 candidates | n = 2 | 180 breakpoints | solver: glpk
+#> PMAXCAP | 15 demand points | 12 candidates | n = 2 | 180 breakpoints | solver: highs
 res
 #> 
 #> =======================================================
 #>   Model         : PMAXCAP
-#>   Solver status : success
+#>   Solver status : optimal
 #> -------------------------------------------------------
 #>   Facilities open : 2
 #>   Covered demand   : 2045.00
 #>   Optimal price    : 8.31
 #>   Profit           : 16987.56
+#>   Processing time  : 0.64s
 #> =======================================================
 ```

@@ -10,7 +10,6 @@ maxcap(
   demand_weight = NULL,
   candidate,
   candidate_id,
-  candidate_weight = NULL,
   existing_sites,
   existing_sites_id,
   existing_sites_weight = NULL,
@@ -22,9 +21,9 @@ maxcap(
   matrix_OD_existing_site_from_id = "from_id",
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "distance",
-  cutoff_distance = 1000,
+  cutoff_distance = NULL,
   p_facilities,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -39,8 +38,6 @@ by this column. Defaults to 1 if NULL.}
 \item{candidate}{sf POINT. Candidate facility sites.}
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
-
-\item{candidate_weight}{character or NULL. Unused by LSCP.}
 
 \item{existing_sites}{sf POINT. The competitor's sites (required).}
 
@@ -64,12 +61,13 @@ by this column. Defaults to 1 if NULL.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric. Pairs beyond this distance are dropped.}
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
 
 \item{p_facilities}{integer. Maximum number of new facilities to open
 (the budget constraint is \code{<=}, not \code{=}, per eq. 2.35).}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}.
@@ -79,4 +77,15 @@ Selects at most \code{p_facilities} candidate sites to maximize the weighted
 demand captured from a competitor (\code{existing_sites}), assuming each
 demand point currently patronizes its nearest existing site and
 switches to any newly opened candidate that is closer.
+}
+\details{
+Reduced formulation: omits the tie-breaking mechanism between a
+candidate and the incumbent competitor (assumes no exact-distance
+ties).
+\deqn{\text{Maximize } z = \sum_{i \in I} w_i Y_i}
+\deqn{\text{s.t. } Y_i \leq \sum_{j \in p_i} X_j, \; \forall i \qquad \sum_{j \in J} X_j \leq P}
+\deqn{X_j, Y_i \in \{0,1\}}
+where \eqn{w_i} = \code{demand_weight}, \eqn{P} = \code{p_facilities}, and
+\eqn{p_i} is the set of candidate sites closer to \eqn{i} than its
+nearest competitor.
 }

@@ -5,11 +5,16 @@
 #' point and its assigned facility, pushing undesirable installations as
 #' far as possible from demand.
 #'
+#' @details
+#' Same constraints as [p_median()], objective inverted:
+#' \deqn{\text{Maximize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}}
+#' where \eqn{a_i} = `demand_weight`, \eqn{d_{ij}} = distance (OD matrix).
+#'
 #' @inheritParams p_median
 #' @return An object of class `llocalocal_result`.
 #' @export
 uflp <- function(demand, demand_id, demand_weight = NULL,
-                  candidate, candidate_id, candidate_weight = NULL,
+                  candidate, candidate_id,
                   existing_sites = NULL, existing_sites_id = NULL,
                   existing_sites_weight = NULL,
                   matrix_OD_candidates,
@@ -20,12 +25,12 @@ uflp <- function(demand, demand_id, demand_weight = NULL,
                   matrix_OD_existing_site_from_id = NULL,
                   matrix_OD_existing_site_to_id = NULL,
                   matrix_OD_existing_site_dist = NULL,
-                  cutoff_distance = 1000,
+                  cutoff_distance = NULL,
                   p_facilities,
-                  solver = "glpk") {
+                  solver = "highs") {
   .assignment_model(
     demand, demand_id, demand_weight,
-    candidate, candidate_id, candidate_weight,
+    candidate, candidate_id,
     existing_sites, existing_sites_id, existing_sites_weight,
     matrix_OD_candidates, matrix_OD_candidates_from_id,
     matrix_OD_candidates_to_id, matrix_OD_candidates_dist,

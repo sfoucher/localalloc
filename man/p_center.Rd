@@ -10,7 +10,6 @@ p_center(
   demand_weight = NULL,
   candidate,
   candidate_id,
-  candidate_weight = NULL,
   existing_sites = NULL,
   existing_sites_id = NULL,
   existing_sites_weight = NULL,
@@ -22,9 +21,9 @@ p_center(
   matrix_OD_existing_site_from_id = NULL,
   matrix_OD_existing_site_to_id = NULL,
   matrix_OD_existing_site_dist = NULL,
-  cutoff_distance = 1000,
+  cutoff_distance = NULL,
   p_facilities,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -39,8 +38,6 @@ demand) -- not validated, since it has no effect.}
 \item{candidate}{sf POINT. Candidate facility sites.}
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
-
-\item{candidate_weight}{character or NULL. Unused by LSCP.}
 
 \item{existing_sites}{sf POINT or NULL. Facilities already open, forced
 into the solution.}
@@ -65,11 +62,12 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric. Pairs beyond this distance are dropped.}
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
 
 \item{p_facilities}{integer. Number of facilities to open.}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}.
@@ -77,4 +75,11 @@ An object of class \code{llocalocal_result}.
 \description{
 Selects exactly \code{p_facilities} candidate sites to minimize the maximum
 distance between any demand point and its assigned facility (minimax).
+}
+\details{
+\deqn{\text{Minimize } z}
+\deqn{\text{s.t. } z \geq d_{ij} Y_{ij}, \; \forall i,j \qquad \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i}
+\deqn{Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p \qquad X_j, Y_{ij} \in \{0,1\}}
+where \eqn{d_{ij}} = distance (OD matrix), \eqn{p} = \code{p_facilities},
+\eqn{z} is the model's \code{Z} variable (maximum distance).
 }
