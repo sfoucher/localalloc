@@ -1,6 +1,6 @@
 Package: localloc
 Title: Facility Location Optimization Models in R
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Philippe", "Apparicio", , "philippe.apparicio@usherbrooke.ca", role = c("aut", "cre"))
 Description: Implements ten facility-location optimization models
