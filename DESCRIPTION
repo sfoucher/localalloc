@@ -1,8 +1,10 @@
 Package: localloc
 Title: Facility Location Optimization Models in R
 Version: 0.2.0
-Authors@R:
-    person("Philippe", "Apparicio", , "philippe.apparicio@usherbrooke.ca", role = c("aut", "cre"))
+Authors@R: c(
+    person("Philippe", "Apparicio", , "philippe.apparicio@usherbrooke.ca", role = c("aut", "cre")),
+    person("Samuel", "Foucher", , "samuel.foucher@gmail.com", role = "ctb"),
+    person("Marie-Hélène", "Gadbois Del Carpio", role = "ctb"))
 Description: Implements ten facility-location optimization models
     (P-Median, P-Center, MCLP, LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP,
     PMAXCAP) as integer linear programs, built as sparse matrices and
