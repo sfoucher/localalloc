@@ -1,5 +1,5 @@
 
-# localalloc
+# localocal
 
 Ten facility-location optimization models (P-Median, P-Center, MCLP,
 LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP) as integer linear
@@ -36,7 +36,7 @@ if supplied, are forced open (“Required Facilities”) and count against
 `p_facilities - k` candidates.
 
 ``` r
-suppressPackageStartupMessages(library(localalloc))
+suppressPackageStartupMessages(library(localocal))
 
 res <- p_median(
   demand = sample_demand, demand_id = "id",
@@ -53,9 +53,21 @@ res
 #>   Model         : P_MEDIAN
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 3
-#>   Total cost       : 36.96
-#>   Processing time  : 0.35s
+#>   Facilities open   : 3
+#>   Demand points     : 15
+#>   Total cost        : 36.96
+#>   Processing time   : 1.01s
+#> -------------------------------------------------------
+#>   Selected sites (3):
+#>   id fixed_cost capacity    source
+#>  C02         14      357 candidate
+#>  C05         44      139 candidate
+#>  C08         35      202 candidate
+#> -------------------------------------------------------
+#>   Assignments       : 15 served
+#>   Distance          : min 0.11 | median 2.48 | mean 2.46 | max 5.69
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $assignments  $total_cost  $n_open  $n_demand  $processing_time
 #> =======================================================
 ```
 
@@ -82,9 +94,21 @@ res
 #>   Model         : P_CENTER
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 3
-#>   Max distance     : 4.06
-#>   Processing time  : 0.06s
+#>   Facilities open   : 3
+#>   Demand points     : 15
+#>   Max distance      : 4.06
+#>   Processing time   : 0.18s
+#> -------------------------------------------------------
+#>   Selected sites (3):
+#>   id fixed_cost capacity    source
+#>  C05         44      139 candidate
+#>  C06         33      104 candidate
+#>  C10         42      208 candidate
+#> -------------------------------------------------------
+#>   Assignments       : 15 served
+#>   Distance          : min 1.73 | median 2.74 | mean 2.82 | max 4.06
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $assignments  $max_distance  $n_open  $n_demand  $processing_time
 #> =======================================================
 ```
 
@@ -104,7 +128,8 @@ Required Facilities – forced open, excluded automatically (with a
 warning) from `candidate` where the two overlap, and counted inside
 `p_facilities`. With 25 existing stations, `p_facilities = 35` opens 10
 new ones. The result’s `sf_selected` layer lists all 35 open facilities,
-with a `source` column (`"candidate"` / `"existing"`) telling them apart.
+with a `source` column (`"candidate"` / `"existing"`) telling them
+apart.
 
 This is a real ~5,800-variable MIP, not a toy example – it solves in
 about 2 seconds with the default `highs` solver.
@@ -138,9 +163,26 @@ res
 #>   Model         : MCLP
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 35
-#>   Covered demand   : 67050.00
-#>   Processing time  : 2.36s
+#>   Facilities open   : 35
+#>   Demand points     : 176
+#>   Covered demand    : 67050.00
+#>   Processing time   : 6.34s
+#> -------------------------------------------------------
+#>   Selected sites (10 of 35):
+#>    id      lat       lon weight    source type
+#>    97 45.40617 -71.93132     21 candidate <NA>
+#>  1996 45.41294 -71.83649     21 candidate <NA>
+#>  2165 45.38899 -71.96145     21 candidate <NA>
+#>  2169 45.40315 -71.95309     21 candidate <NA>
+#>  3420 45.41637 -71.91268     21 candidate <NA>
+#>  3714 45.42185 -71.93824     21 candidate <NA>
+#>  3785 45.38584 -71.94893     21 candidate <NA>
+#>  4643 45.40860 -71.85194     21 candidate <NA>
+#>  4999 45.41880 -71.86579     21 candidate <NA>
+#>  5181 45.41292 -71.96620     21 candidate <NA>
+#>   ... 25 more -- see `$sf_selected` for the full layer
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $covered_demand  $n_open  $n_demand  $processing_time
 #> =======================================================
 ```
 
@@ -169,8 +211,17 @@ res
 #>   Model         : LSCP
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 3
-#>   Processing time  : 0.00s
+#>   Facilities open   : 3
+#>   Demand points     : 15
+#>   Processing time   : 0.01s
+#> -------------------------------------------------------
+#>   Selected sites (3):
+#>   id fixed_cost capacity    source
+#>  C05         44      139 candidate
+#>  C10         42      208 candidate
+#>  C11         11      256 candidate
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $n_open  $n_demand  $processing_time
 #> =======================================================
 ```
 
@@ -198,9 +249,25 @@ res
 #>   Model         : UFCLP
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 7
-#>   Total cost       : 3547.22
-#>   Processing time  : 0.01s
+#>   Facilities open   : 7
+#>   Demand points     : 15
+#>   Total cost        : 3547.22
+#>   Processing time   : 0.02s
+#> -------------------------------------------------------
+#>   Selected sites (7):
+#>   id fixed_cost capacity
+#>  C03         13      285
+#>  C04         43      237
+#>  C05         44      139
+#>  C07         32      132
+#>  C08         35      202
+#>  C09         15      327
+#>  C11         11      256
+#> -------------------------------------------------------
+#>   Assignments       : 15 served
+#>   Distance          : min 0.15 | median 1.96 | mean 1.80 | max 3.22
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $assignments  $fixed_cost_total  $transport_cost_total  $total_cost  $n_open  $n_demand  $processing_time
 #> =======================================================
 ```
 
@@ -228,9 +295,28 @@ res
 #>   Model         : CFLP
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 10
-#>   Total cost       : 4093.48
-#>   Processing time  : 0.01s
+#>   Facilities open   : 10
+#>   Demand points     : 15
+#>   Total cost        : 4093.48
+#>   Processing time   : 0.02s
+#> -------------------------------------------------------
+#>   Selected sites (10):
+#>   id fixed_cost capacity
+#>  C01         37      102
+#>  C02         14      357
+#>  C04         43      237
+#>  C05         44      139
+#>  C07         32      132
+#>  C08         35      202
+#>  C09         15      327
+#>  C10         42      208
+#>  C11         11      256
+#>  C12         29      175
+#> -------------------------------------------------------
+#>   Assignments       : 15 served
+#>   Distance          : min 0.11 | median 2.24 | mean 2.01 | max 3.92
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $assignments  $fixed_cost_total  $transport_cost_total  $total_cost  $n_open  $n_demand  $processing_time
 #> =======================================================
 ```
 
@@ -267,9 +353,18 @@ res
 #>   Model         : DP
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 4
-#>   Min pair distance: 657047.22
-#>   Processing time  : 0.03s
+#>   Facilities open   : 4
+#>   Min pair distance : 657047.22
+#>   Processing time   : 0.08s
+#> -------------------------------------------------------
+#>   Selected sites (4):
+#>   id fixed_cost capacity
+#>  C06         33      104
+#>  C07         32      132
+#>  C08         35      202
+#>  C12         29      175
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $min_distance  $n_open  $processing_time
 #> =======================================================
 ```
 
@@ -296,9 +391,21 @@ res
 #>   Model         : UFLP
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 3
-#>   Total cost       : 18841.00
-#>   Processing time  : 0.01s
+#>   Facilities open   : 3
+#>   Demand points     : 15
+#>   Total cost        : 18841.00
+#>   Processing time   : 0.02s
+#> -------------------------------------------------------
+#>   Selected sites (3):
+#>   id fixed_cost capacity    source
+#>  C06         33      104 candidate
+#>  C08         35      202 candidate
+#>  C12         29      175 candidate
+#> -------------------------------------------------------
+#>   Assignments       : 15 served
+#>   Distance          : min 6.50 | median 9.74 | mean 9.38 | max 12.42
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $assignments  $total_cost  $n_open  $n_demand  $processing_time
 #> =======================================================
 ```
 
@@ -326,9 +433,18 @@ res
 #>   Model         : MAXCAP
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 3
-#>   Covered demand   : 1725.00
-#>   Processing time  : 0.00s
+#>   Facilities open   : 3
+#>   Demand points     : 15
+#>   Covered demand    : 1725.00
+#>   Processing time   : 0.01s
+#> -------------------------------------------------------
+#>   Selected sites (3):
+#>   id fixed_cost capacity
+#>  C05         44      139
+#>  C10         42      208
+#>  C11         11      256
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $covered_demand  $n_open  $n_demand  $processing_time
 #> =======================================================
 ```
 
@@ -356,10 +472,18 @@ res
 #>   Model         : PMAXCAP
 #>   Solver status : optimal
 #> -------------------------------------------------------
-#>   Facilities open : 2
-#>   Covered demand   : 2045.00
-#>   Optimal price    : 8.31
-#>   Profit           : 16987.56
-#>   Processing time  : 0.64s
+#>   Facilities open   : 2
+#>   Demand points     : 15
+#>   Covered demand    : 2045.00
+#>   Optimal price     : 8.31
+#>   Profit            : 16987.56
+#>   Processing time   : 1.59s
+#> -------------------------------------------------------
+#>   Selected sites (2):
+#>   id fixed_cost capacity
+#>  C05         44      139
+#>  C10         42      208
+#> -------------------------------------------------------
+#>   Components: $sf_selected  $covered_demand  $optimal_price  $profit  $n_open  $n_demand  $processing_time
 #> =======================================================
 ```

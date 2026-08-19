@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`localalloc` — an R package implementing ten facility-location optimization
+`localocal` — an R package implementing ten facility-location optimization
 models (LSCP, MCLP, P-Median, P-Center, UFCLP, CFLP, DP, UFLP, MAXCAP,
 PMAXCAP) as integer linear programs, built as sparse matrices and solved
 directly via `Rglpk` or `highs` (default). Author: Philippe Apparicio
 (USherbrooke). All ten are exported; result objects carry class
-`localalloc_result`.
+`localocal_result`.
 
 The repo root *is* the package root (DESCRIPTION, NAMESPACE, R/, man/, tests/
 at top level). `data-raw/` holds the scripts that generated `data/*.rda`
@@ -38,7 +38,7 @@ Ten model functions (`R/lscp.R`, `mclp.R`, `p_center.R`, `p_median.R`,
 `ufclp.R`, `cflp.R`, `dp.R`, `uflp.R`, `maxcap.R`, `pmaxcap.R`), one shared
 internal helper file `R/utils.R` (validation, matrix building, result
 extraction, English-language `stop()`/`warning()` messages), plus `R/print.R`
-(`print.localalloc_result`) and `R/visualize.R` (`plot_sites()` — interactive
+(`print.localocal_result`) and `R/visualize.R` (`plot_sites()` — interactive
 `mapview` map of candidate/demand/existing sf layers; `mapview` is a
 `Suggests`, guarded by `requireNamespace()`).
 
@@ -49,7 +49,7 @@ MIP sparse) → build the objective/constraints directly as a
 `Matrix::sparseMatrix()` (never a dense `matrix`, never a symbolic DSL) →
 dispatch to `solve_direct(L, A, dir, rhs, types, lower, upper, sense, solver)`
 in `utils.R` → extract the solution → return
-`structure(list(...), class = "localalloc_result")`. Check the actual
+`structure(list(...), class = "localocal_result")`. Check the actual
 function/NAMESPACE before assuming a helper name — this file has drifted
 from the code before and will again.
 

@@ -86,16 +86,16 @@ test_that("set_weights fills missing weights with 1 and validates the column", {
   expect_error(set_weights(pts, "id", "w", "x"), "negative")
 })
 
-test_that("build_result constructs a localalloc_result with arbitrary extra fields", {
+test_that("build_result constructs a localocal_result with arbitrary extra fields", {
   # The `...` passthrough is what lets each model attach its own metrics
   # (`covered_demand`, `max_distance`, `profit`, ...) without a common schema.
-  # `print.localalloc_result()` is written to probe for them rather than assume.
+  # `print.localocal_result()` is written to probe for them rather than assume.
   res <- build_result("dummy", "optimal", data.frame(id = 1), foo = 42)
-  expect_s3_class(res, "localalloc_result")
+  expect_s3_class(res, "localocal_result")
   expect_equal(res$foo, 42)
 })
 
-test_that("print.localalloc_result runs without error", {
+test_that("print.localocal_result runs without error", {
   # A smoke test on the print method, deliberately given a bare data.frame as
   # `sf_selected` and only one of the optional metrics: it checks that the method
   # survives a result object missing most of its fields, which is the situation

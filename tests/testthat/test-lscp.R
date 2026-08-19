@@ -9,7 +9,7 @@ test_that("lscp opens the single site that covers everyone", {
   # At a 6 km radius: C1 (CHUS) covers D1 (3471) and D2 (3458) but not the
   # campus D3 (7228). C2 (Lennoxville) covers D1 (4950), D2 (4389) and D3
   # (5750) -- all three. So opening C2 alone suffices; minimum facilities = 1.
-  expect_s3_class(res, "localalloc_result")
+  expect_s3_class(res, "localocal_result")
   expect_equal(res$model_type, "lscp")
   expect_equal(nrow(res$sf_selected), 1)
   expect_equal(as.character(res$sf_selected$id), "C2")

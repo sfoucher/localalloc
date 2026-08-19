@@ -86,7 +86,7 @@ the exact global optimum. Default 2000.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{localalloc_result}, with \code{optimal_price} and
+An object of class \code{localocal_result}, with \code{optimal_price} and
 \code{profit} fields in addition to the usual ones.
 }
 \description{

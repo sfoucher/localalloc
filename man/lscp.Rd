@@ -62,7 +62,7 @@ dropped. \code{NULL} (default) means no cutoff.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{localalloc_result}. Its \code{sf_selected} layer
+An object of class \code{localocal_result}. Its \code{sf_selected} layer
 lists \emph{every} open facility -- the selected candidates and the
 forced-open \code{existing_sites} -- with a \code{source} column
 (\code{"candidate"} / \code{"existing"}) telling them apart.

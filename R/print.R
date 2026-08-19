@@ -2,7 +2,7 @@
 #
 # This method is what makes `mclp(...)` show something when you call it at the
 # top level: R auto-prints any non-invisible value, and auto-printing an object
-# of class `localalloc_result` dispatches here. Assigning the call
+# of class `localocal_result` dispatches here. Assigning the call
 # (`res <- mclp(...)`) suppresses that, as it does for every R object -- type
 # `res`, or wrap the call in parentheses (`(res <- mclp(...))`), to print it.
 #
@@ -15,7 +15,7 @@
 # `profit` for pmaxcap...), and `build_result()` lets each one attach whatever
 # it likes, so this method must cope with any subset being absent.
 #' @export
-print.localalloc_result <- function(x, ..., n = 10) {
+print.localocal_result <- function(x, ..., n = 10) {
   rule  <- "=======================================================\n"
   thin  <- "-------------------------------------------------------\n"
 

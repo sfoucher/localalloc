@@ -35,7 +35,7 @@ pair should be supplied.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{localalloc_result}.
+An object of class \code{localocal_result}.
 }
 \description{
 Selects \code{p_facilities} candidate sites to maximize the minimum pairwise

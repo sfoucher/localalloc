@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(localalloc)
+library(localocal)
 
-test_check("localalloc")
+test_check("localocal")
