@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`llocalocal` — an R package implementing ten facility-location optimization
+`localalloc` — an R package implementing ten facility-location optimization
 models (LSCP, MCLP, P-Median, P-Center, UFCLP, CFLP, DP, UFLP, MAXCAP,
 PMAXCAP) as integer linear programs, built as sparse matrices and solved
 directly via `Rglpk` or `highs` (default). Author: Philippe Apparicio
 (USherbrooke). All ten are exported; result objects carry class
-`llocalocal_result`.
+`localalloc_result`.
 
 The repo root *is* the package root (DESCRIPTION, NAMESPACE, R/, man/, tests/
 at top level). `data-raw/` holds the scripts that generated `data/*.rda`
@@ -38,7 +38,7 @@ Ten model functions (`R/lscp.R`, `mclp.R`, `p_center.R`, `p_median.R`,
 `ufclp.R`, `cflp.R`, `dp.R`, `uflp.R`, `maxcap.R`, `pmaxcap.R`), one shared
 internal helper file `R/utils.R` (validation, matrix building, result
 extraction, English-language `stop()`/`warning()` messages), plus `R/print.R`
-(`print.llocalocal_result`) and `R/visualize.R` (`plot_sites()` — interactive
+(`print.localalloc_result`) and `R/visualize.R` (`plot_sites()` — interactive
 `mapview` map of candidate/demand/existing sf layers; `mapview` is a
 `Suggests`, guarded by `requireNamespace()`).
 
@@ -49,7 +49,7 @@ MIP sparse) → build the objective/constraints directly as a
 `Matrix::sparseMatrix()` (never a dense `matrix`, never a symbolic DSL) →
 dispatch to `solve_direct(L, A, dir, rhs, types, lower, upper, sense, solver)`
 in `utils.R` → extract the solution → return
-`structure(list(...), class = "llocalocal_result")`. Check the actual
+`structure(list(...), class = "localalloc_result")`. Check the actual
 function/NAMESPACE before assuming a helper name — this file has drifted
 from the code before and will again.
 
@@ -71,28 +71,30 @@ type). Variable order within each model's vector is whatever that model's
 comment block documents (typically `[Y, X]` or `[Y, X, Z]`) — read the top
 of the sparse-matrix block before touching indices.
 
-All 10 models still share one input contract: raw `sf` POINT layers
-(`candidate`, `demand`, optional `existing_sites`) plus long-format
-origin-destination `data.frame`s (`matrix_OD_candidates`, optional
-`matrix_OD_existing_site`), turned into a cost matrix via
-`od_to_matrix()`. Models that support `existing_sites` force them open
-("Required Facilities", `X[j] == 1`) rather than competing for the
-budget — except `maxcap`/`pmaxcap`, where `existing_sites` is the
-*competitor* instead. `dp()` is the odd one out: no demand layer at
-all, just a candidate-to-candidate distance table.
+`existing_sites` (LSCP/MCLP/P-Median/P-Center/UFLP) are "Required
+Facilities": forced open via an `X_j == 1` constraint row. In the
+`p_facilities` models (MCLP/P-Median/P-Center/UFLP) they *count inside* that
+budget — the budget row `sum(X) == p` spans candidates **and** existing
+sites, so `p_facilities` is the total number of open facilities and only
+`p_facilities - n_exist` candidates get selected. Validation therefore
+requires `n_exist <= p_facilities <= n_fac + n_exist`. MAXCAP/PMAXCAP are the
+exception: there `existing_sites` are *competitor* sites, not ours, so
+`p_facilities` still bounds candidates only.
+
+Those same five Required-Facilities models return **every open facility** in
+`sf_selected` — selected candidates *and* the forced-open `existing_sites` —
+via `bind_selected_sites()`, with a `source` column (`"candidate"` /
+`"existing"`) distinguishing them. `n_open == nrow(sf_selected)`. MAXCAP /
+PMAXCAP return candidates only (their `existing_sites` are the competitor's).
 
 Key shared helpers in `utils.R` (all internal, no roxygen `@export`):
 - `validate_sf()` / `validate_cost_matrix()` — input validation, English `stop()`/`warning()` messages.
 - `od_to_matrix()` — long OD `data.frame` → wide matrix, `Inf` for missing/over-cutoff pairs.
 - `replace_inf()` — swaps `Inf` for a large finite value; still used by `dp()` (missing-pair fallback, no cutoff concept there) and by `maxcap()`/`pmaxcap()` (as a comparison sentinel for their competitor-baseline `bij` matrix) — NOT used by the assignment-style models anymore, since those now only create a decision variable for pairs that are already finite.
 - `make_coverage_matrix()` — distance matrix → binary coverage matrix for LSCP/MCLP.
-- `set_weights()` — when `weight_col` is NULL, *overwrites* the `weight`
-  column with 1 (even if one already has real data) rather than only
-  filling it if absent. Intentional "unweighted by default" design, but
-  looks like a bug if you forget to pass `demand_weight = "weight"` and
-  wonder why a capacity/weighting constraint isn't binding.
+- `set_weights()` — fills missing weight columns on `sf` objects with 1.
 - `extract_assignment()` — turns a `data.frame(i, j, value)` solution back into a demand→facility assignment `data.frame`; solver-agnostic, unchanged by the `ompr` removal.
-- `build_result()` — assembles the final `llocalocal_result` list.
+- `bind_selected_sites()` — builds the `sf_selected` output: selected candidates + forced-open `existing_sites`, reconciling id column name, id class, CRS, geometry column name, and differing attribute sets (NA-filled), and tagging each row with `source`.
 - `solve_direct()` — the glpk/highs dispatcher described above.
 
 Full test coverage exists — one `test-<model>.R` per model plus

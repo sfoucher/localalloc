@@ -1,3 +1,11 @@
+# Documentation-only file: no code runs here. Each block below documents one
+# bundled dataset (the .rda files in `data/`, produced by the scripts in
+# `data-raw/`), and the bare string that closes each block -- `"sample_demand"`,
+# `"bixi_candidates"` -- is roxygen's way of attaching the docs to a data object
+# rather than to a function. Related datasets are grouped under a single topic via
+# `@name`/`@aliases`, so `?bixi_demand` and `?bixi_od_existing` both land on the
+# same page.
+
 #' Small synthetic facility-location dataset
 #'
 #' A synthetic dataset of demand points, candidate sites, and an existing

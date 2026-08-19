@@ -12,7 +12,6 @@ maxcap(
   candidate_id,
   existing_sites,
   existing_sites_id,
-  existing_sites_weight = NULL,
   matrix_OD_candidates,
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
@@ -43,8 +42,6 @@ by this column. Defaults to 1 if NULL.}
 
 \item{existing_sites_id}{character. Unique id column in \code{existing_sites}.}
 
-\item{existing_sites_weight}{character or NULL. Unused by LSCP.}
-
 \item{matrix_OD_candidates}{data.frame. Long OD table demand-to-candidate.}
 
 \item{matrix_OD_candidates_from_id}{character.}
@@ -70,7 +67,7 @@ dropped. \code{NULL} (default) means no cutoff.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{llocalocal_result}.
+An object of class \code{localalloc_result}.
 }
 \description{
 Selects at most \code{p_facilities} candidate sites to maximize the weighted

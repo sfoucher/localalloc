@@ -12,7 +12,6 @@ uflp(
   candidate_id,
   existing_sites = NULL,
   existing_sites_id = NULL,
-  existing_sites_weight = NULL,
   matrix_OD_candidates,
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
@@ -45,8 +44,6 @@ into the solution.}
 
 \item{existing_sites_id}{character or NULL.}
 
-\item{existing_sites_weight}{character or NULL. Unused by LSCP.}
-
 \item{matrix_OD_candidates}{data.frame. Long OD table demand-to-candidate.}
 
 \item{matrix_OD_candidates_from_id}{character.}
@@ -63,21 +60,25 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
-dropped. \code{NULL} (default) means no cutoff.}
-
-\item{p_facilities}{integer. Number of new facilities to open.}
+\item{p_facilities}{integer. Total number of open facilities, counting
+both the forced-open \code{existing_sites} and the candidates selected by
+the model. Must be >= the number of \code{existing_sites} and <= the number
+of candidates plus existing sites.}
 
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{llocalocal_result}.
+An object of class \code{localalloc_result}. Its \code{sf_selected} layer
+lists \emph{every} open facility -- the selected candidates and the
+forced-open \code{existing_sites} -- with a \code{source} column
+(\code{"candidate"} / \code{"existing"}) telling them apart.
 }
 \description{
-The "reverse" of \code{\link[=p_median]{p_median()}}: selects exactly \code{p_facilities} candidate
-sites to \emph{maximize} the total weighted distance between each demand
+The "reverse" of \code{\link[=p_median]{p_median()}}: opens exactly \code{p_facilities} facilities
+in total to \emph{maximize} the total weighted distance between each demand
 point and its assigned facility, pushing undesirable installations as
-far as possible from demand.
+far as possible from demand. As in \code{\link[=p_median]{p_median()}}, \code{existing_sites} are
+forced open and count against \code{p_facilities}.
 }
 \details{
 Same constraints as \code{\link[=p_median]{p_median()}}, objective inverted:

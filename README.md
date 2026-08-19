@@ -1,5 +1,5 @@
 
-# llocalocal
+# localalloc
 
 Ten facility-location optimization models (P-Median, P-Center, MCLP,
 LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP) as integer linear
@@ -28,14 +28,15 @@ the package.
 
 ### P-Median
 
-Selects exactly `p_facilities` candidate sites to minimize the total
+Opens exactly `p_facilities` facilities in total to minimize the total
 distance between each demand point and its nearest open facility,
 weighted by demand (population, jobs, etc.). Sites in `existing_sites`,
-if supplied, are forced open (“Required Facilities”) instead of
-competing for the budget.
+if supplied, are forced open (“Required Facilities”) and count against
+`p_facilities`: with `k` existing sites, the model picks
+`p_facilities - k` candidates.
 
 ``` r
-suppressPackageStartupMessages(library(llocalocal))
+suppressPackageStartupMessages(library(localalloc))
 
 res <- p_median(
   demand = sample_demand, demand_id = "id",
@@ -45,7 +46,7 @@ res <- p_median(
 )
 #> P_MEDIAN | building cost matrix (15 demand points x 12 candidates)...
 #> P_MEDIAN | building sparse MIP...
-#> P_MEDIAN | solving | 15 demand points | 12 candidates (p=3) | solver: highs
+#> P_MEDIAN | solving | 15 demand points | 12 candidates (p=3 total open) | solver: highs
 res
 #> 
 #> =======================================================
@@ -74,7 +75,7 @@ res <- p_center(
 )
 #> P_CENTER | building cost matrix (15 demand points x 12 candidates)...
 #> P_CENTER | building sparse MIP...
-#> P_CENTER | solving | 15 demand points | 12 candidates (p=3) | solver: highs
+#> P_CENTER | solving | 15 demand points | 12 candidates (p=3 total open) | solver: highs
 res
 #> 
 #> =======================================================
@@ -89,18 +90,21 @@ res
 
 ### MCLP
 
-Selects up to `p_facilities` candidate sites to maximize the weighted
-demand covered within `service_radius`. Unlike LSCP, full coverage isn’t
+Opens `p_facilities` facilities in total to maximize the weighted demand
+covered within `service_radius`. Unlike LSCP, full coverage isn’t
 required – demand outside every open facility’s radius is simply left
-uncovered. `existing_sites`, if supplied, count as already-open coverage
-and don’t consume the facility budget.
+uncovered. `existing_sites`, if supplied, are forced open and count
+against `p_facilities`, exactly as in P-Median.
 
 The package also bundles the real-world case study it originates from:
 5,811 candidate sites, 176 demand points, and 25 existing Bixi
 bike-share stations in Sherbrooke, QC (see `?bixi-data` for full
 provenance and a data-licensing note). `existing_sites` are treated as
-Required Facilities – forced open, and excluded automatically (with a
-warning) from `candidate` where the two overlap.
+Required Facilities – forced open, excluded automatically (with a
+warning) from `candidate` where the two overlap, and counted inside
+`p_facilities`. With 25 existing stations, `p_facilities = 35` opens 10
+new ones. The result’s `sf_selected` layer lists all 35 open facilities,
+with a `source` column (`"candidate"` / `"existing"`) telling them apart.
 
 This is a real ~5,800-variable MIP, not a toy example – it solves in
 about 2 seconds with the default `highs` solver.
@@ -119,7 +123,7 @@ res <- mclp(
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "travel_time_p50",
   cutoff_distance = 130,
-  service_radius = 15, p_facilities = 10
+  service_radius = 15, p_facilities = 35  # 25 existing + 10 new
 )
 #> Warning in mclp(demand = bixi_demand, demand_id = "id", demand_weight =
 #> "weight", : 25 id(s) appear in both `candidate` and `existing_sites`; excluding
@@ -127,7 +131,7 @@ res <- mclp(
 #> 1079, 1080, 1081, 1082, 1083, 1084, 1085, 1086, 1087, 1088, 1089, 1090, 1091,
 #> 1092, 1093, 1094, 1095, 1096, 1097, 1098, 1099
 #> MCLP | building sparse MIP...
-#> MCLP | solving | 176 demand points | 5786 candidates | radius = 15 | p = 10 | 25 existing (forced) | solver: highs
+#> MCLP | solving | 176 demand points | 5786 candidates | radius = 15 | p = 35 total open | 25 existing (forced) -> 10 candidate(s) to select | solver: highs
 res
 #> 
 #> =======================================================
@@ -285,7 +289,7 @@ res <- uflp(
 )
 #> UFLP | building cost matrix (15 demand points x 12 candidates)...
 #> UFLP | building sparse MIP...
-#> UFLP | solving | 15 demand points | 12 candidates (p=3) | solver: highs
+#> UFLP | solving | 15 demand points | 12 candidates (p=3 total open) | solver: highs
 res
 #> 
 #> =======================================================

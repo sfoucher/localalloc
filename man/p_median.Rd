@@ -12,16 +12,15 @@ p_median(
   candidate_id,
   existing_sites = NULL,
   existing_sites_id = NULL,
-  existing_sites_weight = NULL,
   matrix_OD_candidates,
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
   matrix_OD_candidates_dist = "distance",
   matrix_OD_existing_site = NULL,
-  matrix_OD_existing_site_from_id = NULL,
-  matrix_OD_existing_site_to_id = NULL,
-  matrix_OD_existing_site_dist = NULL,
-  cutoff_distance = NULL,
+  matrix_OD_existing_site_from_id = "from_id",
+  matrix_OD_existing_site_to_id = "to_id",
+  matrix_OD_existing_site_dist = "distance",
+  cutoff = NULL,
   p_facilities,
   solver = "highs"
 )
@@ -45,8 +44,6 @@ into the solution.}
 
 \item{existing_sites_id}{character or NULL.}
 
-\item{existing_sites_weight}{character or NULL. Unused by LSCP.}
-
 \item{matrix_OD_candidates}{data.frame. Long OD table demand-to-candidate.}
 
 \item{matrix_OD_candidates_from_id}{character.}
@@ -63,26 +60,31 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
-dropped. \code{NULL} (default) means no cutoff.}
-
-\item{p_facilities}{integer. Number of new facilities to open.}
+\item{p_facilities}{integer. Total number of open facilities, counting
+both the forced-open \code{existing_sites} and the candidates selected by
+the model. Must be >= the number of \code{existing_sites} and <= the number
+of candidates plus existing sites.}
 
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{llocalocal_result}.
+An object of class \code{localalloc_result}. Its \code{sf_selected} layer
+lists \emph{every} open facility -- the selected candidates and the
+forced-open \code{existing_sites} -- with a \code{source} column
+(\code{"candidate"} / \code{"existing"}) telling them apart.
 }
 \description{
-Selects exactly \code{p_facilities} candidate sites to minimize the total
+Opens exactly \code{p_facilities} facilities in total to minimize the total
 weighted distance between each demand point and its nearest open
 facility. Sites in \code{existing_sites} are forced open from the start
-("Required Facilities").
+("Required Facilities") and \emph{count against} \code{p_facilities}: with
+\code{k} existing sites, only \code{p_facilities - k} candidates are selected.
 }
 \details{
 \deqn{\text{Minimize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}}
 \deqn{\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p}
 \deqn{X_j, Y_{ij} \in \{0,1\}}
 where \eqn{a_i} = \code{demand_weight}, \eqn{d_{ij}} = distance (OD matrix),
-\eqn{p} = \code{p_facilities}.
+\eqn{p} = \code{p_facilities}, and \eqn{j} indexes candidate \emph{and} existing
+sites (the latter fixed at \eqn{X_j = 1}).
 }

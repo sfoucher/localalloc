@@ -12,7 +12,6 @@ mclp(
   candidate_id,
   existing_sites = NULL,
   existing_sites_id = NULL,
-  existing_sites_weight = NULL,
   matrix_OD_candidates,
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
@@ -46,8 +45,6 @@ into the solution.}
 
 \item{existing_sites_id}{character or NULL.}
 
-\item{existing_sites_weight}{character or NULL. Unused by LSCP.}
-
 \item{matrix_OD_candidates}{data.frame. Long OD table demand-to-candidate.}
 
 \item{matrix_OD_candidates_from_id}{character.}
@@ -69,25 +66,29 @@ dropped. \code{NULL} (default) means no cutoff.}
 
 \item{service_radius}{numeric. Maximum acceptable distance.}
 
-\item{p_facilities}{integer. Number of \emph{new} facilities to open (the
-budget applies only to \code{candidate}, not to forced-open
-\code{existing_sites}).}
+\item{p_facilities}{integer. Total number of open facilities, counting
+both the forced-open \code{existing_sites} and the candidates selected by
+the model. Must be >= the number of \code{existing_sites} and <= the number
+of candidates plus existing sites.}
 
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{llocalocal_result}.
+An object of class \code{localalloc_result}. Its \code{sf_selected} layer
+lists \emph{every} open facility -- the selected candidates and the
+forced-open \code{existing_sites} -- with a \code{source} column
+(\code{"candidate"} / \code{"existing"}) telling them apart.
 }
 \description{
-Selects up to \code{p_facilities} candidate sites to maximize the weighted
+Opens \code{p_facilities} facilities in total to maximize the weighted
 demand covered within \code{service_radius}. Unlike \code{\link[=lscp]{lscp()}}, full coverage
 of every demand point is not required -- demand that can't be reached
-by any candidate within the radius is simply left uncovered, which is
+by any facility within the radius is simply left uncovered, which is
 the point of "maximal" coverage rather than total coverage.
-\code{existing_sites}, if supplied, are treated as already open: they
-contribute coverage for free and don't consume the \code{p_facilities}
-budget (same Required Facilities semantics as \code{\link[=lscp]{lscp()}}/\code{\link[=p_median]{p_median()}}/
-\code{\link[=p_center]{p_center()}}).
+\code{existing_sites}, if supplied, are forced open ("Required Facilities",
+same semantics as \code{\link[=p_median]{p_median()}}/\code{\link[=p_center]{p_center()}}) and \emph{count against}
+\code{p_facilities}: with \code{k} existing sites, only \code{p_facilities - k}
+candidates are selected.
 }
 \details{
 \deqn{\text{Maximize } z = \sum_{i=1}^{n} a_i Y_i}

@@ -51,7 +51,7 @@ demand (alpha). Default 1.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{llocalocal_result}.
+An object of class \code{localalloc_result}.
 }
 \description{
 Chooses which candidate sites to open, trading off each site's fixed

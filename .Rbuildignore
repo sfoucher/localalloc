@@ -6,3 +6,5 @@
 ^\.git$
 ^\.superpowers$
 ^CLAUDE\.md$
+^.*\.Rproj$
+^\.Rproj\.user$

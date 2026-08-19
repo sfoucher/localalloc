@@ -1,4 +1,4 @@
-Package: llocalocal
+Package: localalloc
 Title: Facility Location Optimization Models in R
 Version: 0.1.0
 Authors@R:
@@ -11,12 +11,13 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Imports:
     highs,
     Matrix,
     Rglpk,
-    sf
+    sf,
+    stats,
+    utils
 Suggests:
     testthat (>= 3.0.0),
     knitr,
@@ -24,3 +25,4 @@ Suggests:
     mapview
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.1.0

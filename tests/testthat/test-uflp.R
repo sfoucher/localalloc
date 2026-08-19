@@ -6,8 +6,9 @@ test_that("uflp opens the site maximizing total weighted distance (repulsion)", 
     matrix_OD_candidates = fx$od_candidates,
     p_facilities = 1
   )
-  # C1: 1+2+9=12 vs C2: 5+5+6=16 -- uflp maximizes, so C2 wins (opposite of
-  # p_median's choice on the same fixture -- see test-p_median.R).
+  # C1 (CHUS): 14157 m vs C2 (Lennoxville): 15089 m -- uflp maximizes, so C2
+  # wins, the opposite of p_median's choice on the same fixture (see
+  # test-p_median.R). Same sparse model, same data, only `sense` differs.
   expect_equal(as.character(res$sf_selected$id), "C2")
-  expect_equal(res$total_cost, 16)
+  expect_equal(res$total_cost, 15089)
 })

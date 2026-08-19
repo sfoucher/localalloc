@@ -8,9 +8,14 @@ test_that("maxcap opens the site that captures the most demand from the competit
     matrix_OD_existing_site = fx$od_existing,
     p_facilities = 1
   )
-  # Baseline (nearest existing E1): D1=10, D2=10, D3=2.
-  # C1 diverts D1(4<10) and D2(4<10) but not D3(5>=2). C2 diverts only D3(1<2).
-  # Opening C1 captures weight 2 (D1+D2), beating C2's weight 1 (D3).
+  # The competitor (E1, Cegep de Sherbrooke) is central, so its baseline is
+  # decent everywhere: D1 = 1975, D2 = 1869, D3 = 1905 m. A demand point is
+  # captured only when our site is strictly closer than that.
+  #   C1 (Parc Jacques-Cartier, downtown) captures D1 (1104 < 1975) and
+  #     D2 (1665 < 1869), but not the campus D3 (4062 > 1905).
+  #   C2 (Carrefour de l'Estrie, out west) captures only D3 (1451 < 1905);
+  #     it is far too distant downtown (4708, 4804).
+  # Two captured points beat one, so C1 is opened.
   expect_equal(as.character(res$sf_selected$id), "C1")
   expect_equal(res$covered_demand, 2)
 })

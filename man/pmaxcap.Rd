@@ -12,7 +12,6 @@ pmaxcap(
   candidate_id,
   existing_sites,
   existing_sites_id,
-  existing_sites_weight = NULL,
   matrix_OD_candidates,
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
@@ -47,8 +46,6 @@ by this column. Defaults to 1 if NULL.}
 \item{existing_sites}{sf POINT. The competitor's sites (required).}
 
 \item{existing_sites_id}{character. Unique id column in \code{existing_sites}.}
-
-\item{existing_sites_weight}{character or NULL. Unused by LSCP.}
 
 \item{matrix_OD_candidates}{data.frame. Long OD table demand-to-candidate.}
 
@@ -89,7 +86,7 @@ the exact global optimum. Default 2000.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{llocalocal_result}, with \code{optimal_price} and
+An object of class \code{localalloc_result}, with \code{optimal_price} and
 \code{profit} fields in addition to the usual ones.
 }
 \description{

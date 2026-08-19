@@ -1,2 +1,8 @@
+# RStudio / R session artifacts
 .Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Local Claude Code notes
 .claude.local.md

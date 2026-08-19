@@ -7,12 +7,10 @@
 lscp(
   demand,
   demand_id,
-  demand_weight = NULL,
   candidate,
   candidate_id,
   existing_sites = NULL,
   existing_sites_id = NULL,
-  existing_sites_weight = NULL,
   matrix_OD_candidates,
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
@@ -31,10 +29,6 @@ lscp(
 
 \item{demand_id}{character. Unique id column in \code{demand}.}
 
-\item{demand_weight}{character or NULL. Weight column in \code{demand}.
-Unused by LSCP's objective (full coverage is required regardless of
-weight) -- not validated, since it has no effect.}
-
 \item{candidate}{sf POINT. Candidate facility sites.}
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
@@ -43,8 +37,6 @@ weight) -- not validated, since it has no effect.}
 into the solution.}
 
 \item{existing_sites_id}{character or NULL.}
-
-\item{existing_sites_weight}{character or NULL. Unused by LSCP.}
 
 \item{matrix_OD_candidates}{data.frame. Long OD table demand-to-candidate.}
 
@@ -70,7 +62,10 @@ dropped. \code{NULL} (default) means no cutoff.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{llocalocal_result}.
+An object of class \code{localalloc_result}. Its \code{sf_selected} layer
+lists \emph{every} open facility -- the selected candidates and the
+forced-open \code{existing_sites} -- with a \code{source} column
+(\code{"candidate"} / \code{"existing"}) telling them apart.
 }
 \description{
 Finds the minimum number of facilities to open so that every demand

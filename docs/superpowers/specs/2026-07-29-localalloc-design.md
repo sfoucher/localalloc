@@ -1,10 +1,10 @@
-# llocalocal — design
+# localalloc — design
 
 Date: 2026-07-29
 
 ## Summary
 
-`llocalocal` is a clean rewrite and expansion of the `localalloc` package:
+`localalloc` is a clean rewrite and expansion of the `localalloc` package:
 all 10 facility-location ILP models from Table 2.1 of the source thesis
 (`Essai_MarieHelene.pdf`) — P-Median, P-Center, MCLP, LSCP, UFCLP, CFLP, DP,
 UFLP, MAXCAP, PMAXCAP — built on `ompr`/`ompr.roi`/`ROI.plugin.glpk`. It
@@ -23,7 +23,7 @@ thesis's own math (§2.1.3–2.1.5).
 
 ## Package identity
 
-- Name: `llocalocal`
+- Name: `localalloc`
 - Author/maintainer: Philippe Apparicio <philippe.apparicio@usherbrooke.ca> (`aut`, `cre`)
 - License: MIT + file LICENSE
 - Language: English (roxygen docs, `stop()`/`warning()` messages)
@@ -61,10 +61,10 @@ Per-model knobs on top of the shared contract:
   distance
 - `p_median()` — `p_facilities`; minimizes total weighted assigned distance
 
-All ten return an S3 object of class `llocalocal_result` (fields:
+All ten return an S3 object of class `localalloc_result` (fields:
 `model_type`, `solver_status`, `sf_selected`, assignment table, and
 model-appropriate stats such as `total_cost` or `max_distance`), printed via
-one shared `print.llocalocal_result()`.
+one shared `print.localalloc_result()`.
 
 ### The other 6 models (UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP)
 
@@ -145,7 +145,7 @@ shortcut taken for convenience.
     `data.frame`
   - `build_result()` — the function `lscp`/`mclp`/`p_center` called in
     `localalloc` without it ever being defined; implemented for real this
-    time, shared by all ten models, returns the `llocalocal_result` object
+    time, shared by all ten models, returns the `localalloc_result` object
   - `validate_fixed_cost()` / `validate_capacity()` — column
     presence/non-negativity checks for `ufclp()`/`cflp()`
   - `derive_competitor_baseline()` — computes `b_i^B`, `p_i`, `T_i` for
@@ -154,7 +154,7 @@ shortcut taken for convenience.
     subsampling for `pmaxcap()`
 - `R/data.R` — `@docType data` documentation for the two bundled datasets
   below
-- `R/print.R` (or folded into `utils.R`) — `print.llocalocal_result()`
+- `R/print.R` (or folded into `utils.R`) — `print.localalloc_result()`
 
 ## Data
 

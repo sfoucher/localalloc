@@ -11,7 +11,7 @@
 #' @inheritParams ufclp
 #' @param candidate_capacity character. Column in `candidate` holding each
 #'   site's maximum capacity (k_j).
-#' @return An object of class `llocalocal_result`.
+#' @return An object of class `localalloc_result`.
 #' @export
 cflp <- function(demand, demand_id, demand_weight = NULL,
                   candidate, candidate_id,
@@ -24,6 +24,12 @@ cflp <- function(demand, demand_id, demand_weight = NULL,
                   candidate_capacity,
                   transport_cost_rate = 1,
                   solver = "highs") {
+  # Thin wrapper: everything happens in `.fixed_charge_model()` (defined in
+  # `ufclp.R`), which is shared with [ufclp()]. Passing a non-NULL
+  # `candidate_capacity` is what turns the capacity rows on --
+  # `sum_i a_i Y_ij <= k_j X_j`, one per candidate. Note the engine's Y variables
+  # are continuous, so a demand point's load may be *split* across facilities
+  # when a capacity limit makes that cheaper; see the `types` comment there.
   .fixed_charge_model(
     demand, demand_id, demand_weight,
     candidate, candidate_id,

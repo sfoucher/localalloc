@@ -1,9 +1,9 @@
-# llocalocal 0.1.0
+# localalloc 0.1.0
 
 * Initial release. Ten facility-location models: `p_median()`,
   `p_center()`, `mclp()`, `lscp()`, `ufclp()`, `cflp()`, `dp()`,
   `uflp()`, `maxcap()`, `pmaxcap()`.
-* Rewrite of the `localalloc` package: fixes an undefined
+* Rewrite of the original `localalloc` code base: fixes an undefined
   `.build_result()` call, missing exports, and an unused test file;
   unifies all model functions onto one sf/OD input contract.
 * Ships two datasets: a small synthetic example (`sample_*`) and the

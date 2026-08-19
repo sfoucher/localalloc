@@ -9,7 +9,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# llocalocal
+# localalloc
 
 Ten facility-location optimization models (P-Median, P-Center, MCLP,
 LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP) as integer linear
@@ -38,14 +38,15 @@ the package.
 
 ### P-Median
 
-Selects exactly `p_facilities` candidate sites to minimize the total
+Opens exactly `p_facilities` facilities in total to minimize the total
 distance between each demand point and its nearest open facility,
 weighted by demand (population, jobs, etc.). Sites in `existing_sites`,
-if supplied, are forced open ("Required Facilities") instead of
-competing for the budget.
+if supplied, are forced open ("Required Facilities") and count against
+`p_facilities`: with `k` existing sites, the model picks
+`p_facilities - k` candidates.
 
 ```{r p-median}
-suppressPackageStartupMessages(library(llocalocal))
+suppressPackageStartupMessages(library(localalloc))
 
 res <- p_median(
   demand = sample_demand, demand_id = "id",
@@ -75,18 +76,21 @@ res
 
 ### MCLP
 
-Selects up to `p_facilities` candidate sites to maximize the weighted
+Opens `p_facilities` facilities in total to maximize the weighted
 demand covered within `service_radius`. Unlike LSCP, full coverage
 isn't required -- demand outside every open facility's radius is
-simply left uncovered. `existing_sites`, if supplied, count as
-already-open coverage and don't consume the facility budget.
+simply left uncovered. `existing_sites`, if supplied, are forced open
+and count against `p_facilities`, exactly as in P-Median.
 
 The package also bundles the real-world case study it originates from:
 5,811 candidate sites, 176 demand points, and 25 existing Bixi
 bike-share stations in Sherbrooke, QC (see `?bixi-data` for full
 provenance and a data-licensing note). `existing_sites` are treated as
-Required Facilities -- forced open, and excluded automatically (with a
-warning) from `candidate` where the two overlap.
+Required Facilities -- forced open, excluded automatically (with a
+warning) from `candidate` where the two overlap, and counted inside
+`p_facilities`. With 25 existing stations, `p_facilities = 35` opens 10
+new ones. The result's `sf_selected` layer lists all 35 open facilities,
+with a `source` column (`"candidate"` / `"existing"`) telling them apart.
 
 This is a real ~5,800-variable MIP, not a toy example -- it solves in
 about 2 seconds with the default `highs` solver.
@@ -105,7 +109,7 @@ res <- mclp(
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "travel_time_p50",
   cutoff_distance = 130,
-  service_radius = 15, p_facilities = 10
+  service_radius = 15, p_facilities = 35  # 25 existing + 10 new
 )
 res
 ```
