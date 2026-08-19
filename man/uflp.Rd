@@ -60,6 +60,9 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
+
 \item{p_facilities}{integer. Total number of open facilities, counting
 both the forced-open \code{existing_sites} and the candidates selected by
 the model. Must be >= the number of \code{existing_sites} and <= the number

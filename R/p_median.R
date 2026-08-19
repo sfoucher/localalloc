@@ -267,7 +267,7 @@ p_median <- function(demand, demand_id, demand_weight = NULL,
                       matrix_OD_existing_site_from_id = "from_id",
                       matrix_OD_existing_site_to_id = "to_id",
                       matrix_OD_existing_site_dist = "distance",
-                      cutoff = NULL,
+                      cutoff_distance = NULL,
                       p_facilities,
                       solver = "highs") {
   .assignment_model(
@@ -278,7 +278,7 @@ p_median <- function(demand, demand_id, demand_weight = NULL,
     matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
     matrix_OD_existing_site, matrix_OD_existing_site_from_id,
     matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist,
-    cutoff, p_facilities, solver,
+    cutoff_distance, p_facilities, solver,
     sense = "min", model_type = "p_median"
   )
 }
