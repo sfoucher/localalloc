@@ -5,6 +5,14 @@
 #' no demand layer -- it's a pure site-dispersion problem among
 #' `candidate`s.
 #'
+#' @details
+#' \deqn{\text{Maximize } D}
+#' \deqn{\text{s.t. } D \leq d_{ij} + (M - d_{ij})(1-X_i) + (M-d_{ij})(1-X_j), \; \forall i,j}
+#' \deqn{\sum_{j} X_j = P \qquad X_j \in \{0,1\}}
+#' where \eqn{D} = `min_distance` in the output, \eqn{P} = `p_facilities`,
+#' and \eqn{M} is a sufficiently large constant (computed internally as
+#' 2 times the maximum distance in the matrix).
+#'
 #' @param candidate sf POINT. Candidate sites.
 #' @param candidate_id character. Unique id column in `candidate`.
 #' @param matrix_OD_candidates data.frame. Long candidate-to-candidate
@@ -14,7 +22,7 @@
 #' @param matrix_OD_candidates_to_id character.
 #' @param matrix_OD_candidates_dist character.
 #' @param p_facilities integer. Number of sites to select (>= 2).
-#' @param solver character. ROI solver, default `"glpk"`.
+#' @param solver character. `"highs"` (default) or `"glpk"`.
 #' @return An object of class `llocalocal_result`.
 #' @export
 dp <- function(candidate, candidate_id,
@@ -23,7 +31,8 @@ dp <- function(candidate, candidate_id,
                 matrix_OD_candidates_to_id = "to_id",
                 matrix_OD_candidates_dist = "distance",
                 p_facilities,
-                solver = "glpk") {
+                solver = "highs") {
+  t0 <- Sys.time()
 
   validate_sf(candidate, "candidate", candidate_id)
   validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
@@ -47,34 +56,46 @@ dp <- function(candidate, candidate_id,
   dist_mat <- replace_inf(dist_mat)
   big_m <- max(dist_mat) * 2
 
-  model <- ompr::MIPModel() |>
-    ompr::add_variable(X[j], j = 1:n_fac, type = "binary") |>
-    ompr::add_variable(D, type = "continuous", lb = 0) |>
-    ompr::set_objective(D, sense = "max") |>
-    ompr::add_constraint(ompr::sum_expr(X[j], j = 1:n_fac) == p_facilities) |>
-    ompr::add_constraint(
-      D <= dist_mat[i, j] + (big_m - dist_mat[i, j]) * (1 - X[i]) +
-        (big_m - dist_mat[i, j]) * (1 - X[j]),
-      i = 1:n_fac, j = 1:n_fac, i < j
-    )
+  message("DP | building sparse MIP...")
+  pairs <- which(upper.tri(matrix(TRUE, n_fac, n_fac)), arr.ind = TRUE)
+  idx_i <- pairs[, 1]; idx_j <- pairs[, 2]
+  n_pairs <- nrow(pairs)
+  d_col <- n_fac + 1
+  n_vars <- d_col
 
-  message(sprintf("DP | %d candidates | p = %d | solver: %s", n_fac, p_facilities, solver))
+  # D <= dist_ij + (M-dist_ij)*(1-X_i) + (M-dist_ij)*(1-X_j) expands to
+  # D + c_ij*X_i + c_ij*X_j <= 2M - dist_ij, where c_ij = M - dist_ij.
+  dist_ij <- dist_mat[cbind(idx_i, idx_j)]
+  c_ij <- big_m - dist_ij
 
-  result <- tryCatch(
-    ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
-    error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
-  )
-  if (result$status != "success")
+  L <- c(rep(0, n_fac), 1)
+  A_p <- Matrix::sparseMatrix(i = rep(1L, n_fac), j = seq_len(n_fac), x = 1, dims = c(1, n_vars))
+  A_disp <- Matrix::sparseMatrix(
+    i = rep(seq_len(n_pairs), 3), j = c(rep(d_col, n_pairs), idx_i, idx_j),
+    x = c(rep(1, n_pairs), c_ij, c_ij), dims = c(n_pairs, n_vars))
+  A <- rbind(A_p, A_disp)
+  dir <- c("==", rep("<=", n_pairs))
+  rhs <- c(p_facilities, 2 * big_m - dist_ij)
+
+  types <- c(rep("B", n_fac), "C")
+  lower <- c(rep(0, n_fac), 0)
+  upper <- c(rep(1, n_fac), Inf)
+
+  message(sprintf("DP | solving | %d candidates | p = %d | solver: %s", n_fac, p_facilities, solver))
+
+  result <- solve_direct(L, A, dir, rhs, types, lower, upper, sense = "max", solver = solver)
+  if (!result$optimal)
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
-  X_vals <- ompr::get_solution(result, X[j])$value
-  D_val <- as.numeric(ompr::get_solution(result, D))
+  X_vals <- result$solution[seq_len(n_fac)]
+  D_val <- result$solution[d_col]
   selected_j <- which(round(X_vals) == 1)
   ids_selected <- ids_cand[selected_j]
   sf_selected <- candidate[as.character(candidate[[candidate_id]]) %in% ids_selected, , drop = FALSE]
 
   build_result(
     model_type = "dp", solver_status = result$status, sf_selected = sf_selected,
-    min_distance = D_val, n_open = length(ids_selected)
+    min_distance = D_val, n_open = length(ids_selected),
+    processing_time = as.numeric(difftime(Sys.time(), t0, units = "secs"))
   )
 }

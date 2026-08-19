@@ -10,6 +10,13 @@
 #' budget (same Required Facilities semantics as [lscp()]/[p_median()]/
 #' [p_center()]).
 #'
+#' @details
+#' \deqn{\text{Maximize } z = \sum_{i=1}^{n} a_i Y_i}
+#' \deqn{\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq Y_i, \; \forall i \qquad \sum_{j=1}^{m} X_j = p}
+#' \deqn{X_j, Y_i \in \{0,1\}}
+#' where \eqn{a_i} = `demand_weight`, \eqn{b_{ij} = 1} if \eqn{d_{ij} \leq S}
+#' (`service_radius`), \eqn{p} = `p_facilities`.
+#'
 #' @inheritParams lscp
 #' @param demand_weight character or NULL. Weight column in `demand` (e.g.
 #'   population). This is the primary driver of MCLP's objective --
@@ -22,7 +29,7 @@
 #' @return An object of class `llocalocal_result`.
 #' @export
 mclp <- function(demand, demand_id, demand_weight = NULL,
-                  candidate, candidate_id, candidate_weight = NULL,
+                  candidate, candidate_id,
                   existing_sites = NULL, existing_sites_id = NULL,
                   existing_sites_weight = NULL,
                   matrix_OD_candidates,
@@ -33,10 +40,11 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
                   matrix_OD_existing_site_from_id = NULL,
                   matrix_OD_existing_site_to_id = NULL,
                   matrix_OD_existing_site_dist = NULL,
-                  cutoff_distance = 1000,
+                  cutoff_distance = NULL,
                   service_radius,
                   p_facilities,
-                  solver = "glpk") {
+                  solver = "highs") {
+  t0 <- Sys.time()
 
   validate_sf(candidate, "candidate", candidate_id)
   validate_sf(demand, "demand", demand_id)
@@ -61,8 +69,11 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
 
   if (!is.numeric(service_radius) || length(service_radius) != 1 || service_radius <= 0)
     stop("`service_radius` must be a single positive number.")
-  if (!is.numeric(cutoff_distance) || cutoff_distance <= 0)
-    stop("`cutoff_distance` must be a positive number.")
+  if (is.null(cutoff_distance)) {
+    cutoff_distance <- Inf
+  } else if (!is.numeric(cutoff_distance) || cutoff_distance <= 0) {
+    stop("`cutoff_distance` must be NULL (no cutoff) or a positive number.")
+  }
   if (!is.numeric(p_facilities) || p_facilities < 1)
     stop("`p_facilities` must be an integer >= 1.")
   p_facilities <- as.integer(p_facilities)
@@ -105,30 +116,44 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
   n_all_fac <- length(ids_all_fac)
   bij <- make_coverage_matrix(cost_mat_all, service_radius)
 
-  model <- ompr::MIPModel() |>
-    ompr::add_variable(X[j], j = 1:n_all_fac, type = "binary") |>
-    ompr::add_variable(Y[i], i = 1:n_cli, type = "binary") |>
-    ompr::set_objective(ompr::sum_expr(a[i] * Y[i], i = 1:n_cli), sense = "max") |>
-    ompr::add_constraint(ompr::sum_expr(X[j], j = 1:n_fac) == p_facilities) |>
-    ompr::add_constraint(Y[i] <= ompr::sum_expr(bij[i, j] * X[j], j = 1:n_all_fac), i = 1:n_cli)
+  message("MCLP | building sparse MIP...")
+  cov <- which(bij == 1, arr.ind = TRUE)
+  n_vars <- n_cli + n_all_fac
 
-  if (has_existing)
-    model <- ompr::add_constraint(model, X[j] == 1, j = (n_fac + 1):n_all_fac)
+  L <- c(a, rep(0, n_all_fac))
 
-  message(sprintf("MCLP | %d demand points | %d candidates | radius = %g | p = %d%s | solver: %s",
+  A_p    <- Matrix::sparseMatrix(i = rep(1L, n_fac), j = n_cli + seq_len(n_fac), x = 1,
+                                 dims = c(1, n_vars))
+  A_cov  <- Matrix::sparseMatrix(
+    i = c(seq_len(n_cli), cov[, 1]), j = c(seq_len(n_cli), n_cli + cov[, 2]),
+    x = c(rep(1, n_cli), rep(-1, nrow(cov))), dims = c(n_cli, n_vars))
+  A <- rbind(A_p, A_cov)
+  dir <- c("==", rep("<=", n_cli))
+  rhs <- c(p_facilities, rep(0, n_cli))
+
+  if (has_existing) {
+    A_force <- Matrix::sparseMatrix(i = seq_len(n_exist), j = n_cli + n_fac + seq_len(n_exist),
+                                    x = 1, dims = c(n_exist, n_vars))
+    A <- rbind(A, A_force)
+    dir <- c(dir, rep("==", n_exist))
+    rhs <- c(rhs, rep(1, n_exist))
+  }
+
+  types <- rep("B", n_vars)
+  lower <- rep(0, n_vars)
+  upper <- rep(1, n_vars)
+
+  message(sprintf("MCLP | solving | %d demand points | %d candidates | radius = %g | p = %d%s | solver: %s",
                   n_cli, n_fac, service_radius, p_facilities,
                   if (has_existing) sprintf(" | %d existing (forced)", n_exist) else "",
                   solver))
 
-  result <- tryCatch(
-    ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
-    error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
-  )
-  if (result$status != "success")
+  result <- solve_direct(L, A, dir, rhs, types, lower, upper, sense = "max", solver = solver)
+  if (!result$optimal)
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
-  X_vals <- ompr::get_solution(result, X[j])$value
-  Y_vals <- ompr::get_solution(result, Y[i])$value
+  Y_vals <- result$solution[seq_len(n_cli)]
+  X_vals <- result$solution[(n_cli + 1):(n_cli + n_all_fac)]
   selected_j <- which(round(X_vals[1:n_fac]) == 1)
   ids_selected <- ids_cand[selected_j]
   sf_selected <- candidate[as.character(candidate[[candidate_id]]) %in% ids_selected, , drop = FALSE]
@@ -138,6 +163,7 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
     model_type = "mclp", solver_status = result$status, sf_selected = sf_selected,
     covered_demand = covered_demand,
     n_open = length(ids_selected) + if (has_existing) n_exist else 0L,
-    n_demand = n_cli
+    n_demand = n_cli,
+    processing_time = as.numeric(difftime(Sys.time(), t0, units = "secs"))
   )
 }

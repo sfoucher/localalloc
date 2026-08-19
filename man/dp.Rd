@@ -12,7 +12,7 @@ dp(
   matrix_OD_candidates_to_id = "to_id",
   matrix_OD_candidates_dist = "distance",
   p_facilities,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -32,7 +32,7 @@ pair should be supplied.}
 
 \item{p_facilities}{integer. Number of sites to select (>= 2).}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}.
@@ -42,4 +42,12 @@ Selects \code{p_facilities} candidate sites to maximize the minimum pairwise
 distance between opened sites (maximally spread-out placement). Takes
 no demand layer -- it's a pure site-dispersion problem among
 \code{candidate}s.
+}
+\details{
+\deqn{\text{Maximize } D}
+\deqn{\text{s.t. } D \leq d_{ij} + (M - d_{ij})(1-X_i) + (M-d_{ij})(1-X_j), \; \forall i,j}
+\deqn{\sum_{j} X_j = P \qquad X_j \in \{0,1\}}
+where \eqn{D} = \code{min_distance} in the output, \eqn{P} = \code{p_facilities},
+and \eqn{M} is a sufficiently large constant (computed internally as
+2 times the maximum distance in the matrix).
 }

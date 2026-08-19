@@ -10,7 +10,6 @@ mclp(
   demand_weight = NULL,
   candidate,
   candidate_id,
-  candidate_weight = NULL,
   existing_sites = NULL,
   existing_sites_id = NULL,
   existing_sites_weight = NULL,
@@ -22,10 +21,10 @@ mclp(
   matrix_OD_existing_site_from_id = NULL,
   matrix_OD_existing_site_to_id = NULL,
   matrix_OD_existing_site_dist = NULL,
-  cutoff_distance = 1000,
+  cutoff_distance = NULL,
   service_radius,
   p_facilities,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -41,8 +40,6 @@ Defaults to 1 if NULL.}
 \item{candidate}{sf POINT. Candidate facility sites.}
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
-
-\item{candidate_weight}{character or NULL. Unused by LSCP.}
 
 \item{existing_sites}{sf POINT or NULL. Facilities already open, forced
 into the solution.}
@@ -67,7 +64,8 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric. Pairs beyond this distance are dropped.}
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
 
 \item{service_radius}{numeric. Maximum acceptable distance.}
 
@@ -75,7 +73,7 @@ into the solution.}
 budget applies only to \code{candidate}, not to forced-open
 \code{existing_sites}).}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}.
@@ -90,4 +88,11 @@ the point of "maximal" coverage rather than total coverage.
 contribute coverage for free and don't consume the \code{p_facilities}
 budget (same Required Facilities semantics as \code{\link[=lscp]{lscp()}}/\code{\link[=p_median]{p_median()}}/
 \code{\link[=p_center]{p_center()}}).
+}
+\details{
+\deqn{\text{Maximize } z = \sum_{i=1}^{n} a_i Y_i}
+\deqn{\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq Y_i, \; \forall i \qquad \sum_{j=1}^{m} X_j = p}
+\deqn{X_j, Y_i \in \{0,1\}}
+where \eqn{a_i} = \code{demand_weight}, \eqn{b_{ij} = 1} if \eqn{d_{ij} \leq S}
+(\code{service_radius}), \eqn{p} = \code{p_facilities}.
 }

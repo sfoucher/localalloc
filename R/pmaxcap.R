@@ -7,6 +7,18 @@
 #' MAXCAP-style linear MIP at each one, and keeping the best. This needs
 #' no nonlinear/MINLP solver.
 #'
+#' @details
+#' \deqn{\text{Maximize } \Pi = (P^A - v) \sum_{i \in I} a_i Y_i^A - \sum_{j \in J} f_j X_j^A}
+#' \deqn{\text{s.t. } Y_i^A \leq \sum_{j \in N_i(b_i^B)} X_j^A, \; \forall i \qquad \sum_{j=1}^{m} X_j^A = n^A}
+#' \deqn{X_j^A, Y_i^A \in \{0,1\}}
+#' where \eqn{N_i(b_i^B) = \{j \in J : P^A + t\,d_{ij} < P^B + t\,d_{i,b_i^B}\}}
+#' (capture zone, depends on price \eqn{P^A}), \eqn{P^A} = optimized
+#' price (returned in `optimal_price`), \eqn{v} = `marginal_cost`,
+#' \eqn{f_j} = `candidate_fixed_cost`, \eqn{n^A} = `n_facilities`,
+#' \eqn{P^B} = `competitor_price`, \eqn{t} = `distance_cost_rate`. Solved
+#' by enumerating price breakpoints (see description above), not directly
+#' as a MINLP.
+#'
 #' @inheritParams maxcap
 #' @param marginal_cost numeric. Marginal production cost per unit (v).
 #' @param distance_cost_rate numeric. Cost per unit distance (t).
@@ -23,7 +35,7 @@
 #'   `profit` fields in addition to the usual ones.
 #' @export
 pmaxcap <- function(demand, demand_id, demand_weight = NULL,
-                     candidate, candidate_id, candidate_weight = NULL,
+                     candidate, candidate_id,
                      existing_sites, existing_sites_id,
                      existing_sites_weight = NULL,
                      matrix_OD_candidates,
@@ -34,14 +46,15 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
                      matrix_OD_existing_site_from_id = "from_id",
                      matrix_OD_existing_site_to_id = "to_id",
                      matrix_OD_existing_site_dist = "distance",
-                     cutoff_distance = 1000,
+                     cutoff_distance = NULL,
                      marginal_cost = 0,
                      distance_cost_rate = 1,
                      competitor_price,
                      n_facilities,
                      candidate_fixed_cost = NULL,
                      max_breakpoints = 2000,
-                     solver = "glpk") {
+                     solver = "highs") {
+  t0 <- Sys.time()
 
   validate_sf(candidate, "candidate", candidate_id)
   validate_sf(demand, "demand", demand_id)
@@ -58,6 +71,12 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
   n_facilities <- as.integer(n_facilities)
   if (!is.numeric(max_breakpoints) || max_breakpoints < 1)
     stop("`max_breakpoints` must be an integer >= 1.")
+
+  if (is.null(cutoff_distance)) {
+    cutoff_distance <- Inf
+  } else if (!is.numeric(cutoff_distance) || cutoff_distance <= 0) {
+    stop("`cutoff_distance` must be NULL (no cutoff) or a positive number.")
+  }
 
   validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                        matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
@@ -103,6 +122,12 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
                                        competitor_price, max_breakpoints)
 
   best <- list(profit = -Inf, price = NA_real_, X_vals = NULL, Y_vals = NULL, status = NA_character_)
+  n_vars <- n_cli + n_fac
+  A_p <- Matrix::sparseMatrix(i = rep(1L, n_fac), j = n_cli + seq_len(n_fac), x = 1,
+                              dims = c(1, n_vars))
+  types <- rep("B", n_vars)
+  lower <- rep(0, n_vars)
+  upper <- rep(1, n_vars)
 
   for (price in breakpoints) {
     bij <- matrix(0L, nrow = n_cli, ncol = n_fac, dimnames = list(ids_demand, ids_cand))
@@ -112,27 +137,22 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
       bij[, jj] <- as.integer(threshold >= price)
     }
 
-    model <- ompr::MIPModel() |>
-      ompr::add_variable(X[j], j = 1:n_fac, type = "binary") |>
-      ompr::add_variable(Y[i], i = 1:n_cli, type = "binary") |>
-      ompr::set_objective(
-        (price - marginal_cost) * ompr::sum_expr(a[i] * Y[i], i = 1:n_cli) -
-          ompr::sum_expr(f_cost[j] * X[j], j = 1:n_fac),
-        sense = "max"
-      ) |>
-      ompr::add_constraint(ompr::sum_expr(X[j], j = 1:n_fac) == n_facilities) |>
-      ompr::add_constraint(Y[i] <= ompr::sum_expr(bij[i, j] * X[j], j = 1:n_fac), i = 1:n_cli)
+    cov <- which(bij == 1, arr.ind = TRUE)
+    L <- c(a * (price - marginal_cost), -f_cost)
+    A_cov <- Matrix::sparseMatrix(
+      i = c(seq_len(n_cli), cov[, 1]), j = c(seq_len(n_cli), n_cli + cov[, 2]),
+      x = c(rep(1, n_cli), rep(-1, nrow(cov))), dims = c(n_cli, n_vars))
+    A <- rbind(A_p, A_cov)
+    dir <- c("==", rep("<=", n_cli))
+    rhs <- c(n_facilities, rep(0, n_cli))
 
-    result <- tryCatch(
-      ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
-      error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
-    )
-    if (result$status == "success") {
-      profit <- ompr::objective_value(result)
+    result <- solve_direct(L, A, dir, rhs, types, lower, upper, sense = "max", solver = solver)
+    if (result$optimal) {
+      profit <- result$objective_value
       if (profit > best$profit) {
         best <- list(profit = profit, price = price,
-                     X_vals = ompr::get_solution(result, X[j])$value,
-                     Y_vals = ompr::get_solution(result, Y[i])$value,
+                     X_vals = result$solution[(n_cli + 1):(n_cli + n_fac)],
+                     Y_vals = result$solution[seq_len(n_cli)],
                      status = result$status)
       }
     }
@@ -152,6 +172,7 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
   build_result(
     model_type = "pmaxcap", solver_status = best$status, sf_selected = sf_selected,
     covered_demand = covered_demand, optimal_price = best$price, profit = best$profit,
-    n_open = length(ids_selected), n_demand = n_cli
+    n_open = length(ids_selected), n_demand = n_cli,
+    processing_time = as.numeric(difftime(Sys.time(), t0, units = "secs"))
   )
 }

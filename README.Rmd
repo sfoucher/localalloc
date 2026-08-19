@@ -13,9 +13,10 @@ knitr::opts_chunk$set(
 
 Ten facility-location optimization models (P-Median, P-Center, MCLP,
 LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP) as integer linear
-programs, solved via `ompr` and `ROI.plugin.glpk`. The models follow
-the theoretical framework in `Essai_MarieHelene.pdf`, the thesis this
-package originates from.
+programs, built as sparse matrices and solved directly via `Rglpk` or
+`highs` (the default -- faster than `glpk` on these problems). The
+models follow the theoretical framework in `Essai_MarieHelene.pdf`,
+the thesis this package originates from.
 
 ## Installation
 
@@ -87,8 +88,8 @@ provenance and a data-licensing note). `existing_sites` are treated as
 Required Facilities -- forced open, and excluded automatically (with a
 warning) from `candidate` where the two overlap.
 
-This is a real ~5,800-variable MIP, not a toy example -- expect it to
-take a few minutes to solve with the default `glpk` solver.
+This is a real ~5,800-variable MIP, not a toy example -- it solves in
+about 2 seconds with the default `highs` solver.
 
 ```{r mclp}
 res <- mclp(

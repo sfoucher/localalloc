@@ -10,7 +10,6 @@ p_median(
   demand_weight = NULL,
   candidate,
   candidate_id,
-  candidate_weight = NULL,
   existing_sites = NULL,
   existing_sites_id = NULL,
   existing_sites_weight = NULL,
@@ -22,9 +21,9 @@ p_median(
   matrix_OD_existing_site_from_id = NULL,
   matrix_OD_existing_site_to_id = NULL,
   matrix_OD_existing_site_dist = NULL,
-  cutoff_distance = 1000,
+  cutoff_distance = NULL,
   p_facilities,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -40,8 +39,6 @@ assigned distance. Defaults to 1 if NULL.}
 \item{candidate}{sf POINT. Candidate facility sites.}
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
-
-\item{candidate_weight}{character or NULL. Unused by LSCP.}
 
 \item{existing_sites}{sf POINT or NULL. Facilities already open, forced
 into the solution.}
@@ -66,11 +63,12 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric. Pairs beyond this distance are dropped.}
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
 
 \item{p_facilities}{integer. Number of new facilities to open.}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}.
@@ -80,4 +78,11 @@ Selects exactly \code{p_facilities} candidate sites to minimize the total
 weighted distance between each demand point and its nearest open
 facility. Sites in \code{existing_sites} are forced open from the start
 ("Required Facilities").
+}
+\details{
+\deqn{\text{Minimize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}}
+\deqn{\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p}
+\deqn{X_j, Y_{ij} \in \{0,1\}}
+where \eqn{a_i} = \code{demand_weight}, \eqn{d_{ij}} = distance (OD matrix),
+\eqn{p} = \code{p_facilities}.
 }

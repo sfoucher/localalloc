@@ -10,7 +10,6 @@ pmaxcap(
   demand_weight = NULL,
   candidate,
   candidate_id,
-  candidate_weight = NULL,
   existing_sites,
   existing_sites_id,
   existing_sites_weight = NULL,
@@ -22,14 +21,14 @@ pmaxcap(
   matrix_OD_existing_site_from_id = "from_id",
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "distance",
-  cutoff_distance = 1000,
+  cutoff_distance = NULL,
   marginal_cost = 0,
   distance_cost_rate = 1,
   competitor_price,
   n_facilities,
   candidate_fixed_cost = NULL,
   max_breakpoints = 2000,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -44,8 +43,6 @@ by this column. Defaults to 1 if NULL.}
 \item{candidate}{sf POINT. Candidate facility sites.}
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
-
-\item{candidate_weight}{character or NULL. Unused by LSCP.}
 
 \item{existing_sites}{sf POINT. The competitor's sites (required).}
 
@@ -69,7 +66,8 @@ by this column. Defaults to 1 if NULL.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric. Pairs beyond this distance are dropped.}
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
 
 \item{marginal_cost}{numeric. Marginal production cost per unit (v).}
 
@@ -88,7 +86,7 @@ evaluated. Under the cap: exact. Over it: breakpoints are subsampled
 and a warning is raised -- the result is then an approximation, not
 the exact global optimum. Default 2000.}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}, with \code{optimal_price} and
@@ -101,4 +99,16 @@ only flips at threshold breakpoints), so the true global optimum is
 found by enumerating every breakpoint price, solving the resulting
 MAXCAP-style linear MIP at each one, and keeping the best. This needs
 no nonlinear/MINLP solver.
+}
+\details{
+\deqn{\text{Maximize } \Pi = (P^A - v) \sum_{i \in I} a_i Y_i^A - \sum_{j \in J} f_j X_j^A}
+\deqn{\text{s.t. } Y_i^A \leq \sum_{j \in N_i(b_i^B)} X_j^A, \; \forall i \qquad \sum_{j=1}^{m} X_j^A = n^A}
+\deqn{X_j^A, Y_i^A \in \{0,1\}}
+where \eqn{N_i(b_i^B) = \{j \in J : P^A + t\,d_{ij} < P^B + t\,d_{i,b_i^B}\}}
+(capture zone, depends on price \eqn{P^A}), \eqn{P^A} = optimized
+price (returned in \code{optimal_price}), \eqn{v} = \code{marginal_cost},
+\eqn{f_j} = \code{candidate_fixed_cost}, \eqn{n^A} = \code{n_facilities},
+\eqn{P^B} = \code{competitor_price}, \eqn{t} = \code{distance_cost_rate}. Solved
+by enumerating price breakpoints (see description above), not directly
+as a MINLP.
 }

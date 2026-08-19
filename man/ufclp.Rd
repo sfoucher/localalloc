@@ -10,15 +10,14 @@ ufclp(
   demand_weight = NULL,
   candidate,
   candidate_id,
-  candidate_weight = NULL,
   matrix_OD_candidates,
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
   matrix_OD_candidates_dist = "distance",
-  cutoff_distance = 1000,
+  cutoff_distance = NULL,
   candidate_fixed_cost,
   transport_cost_rate = 1,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -32,8 +31,6 @@ ufclp(
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
 
-\item{candidate_weight}{character or NULL. Unused.}
-
 \item{matrix_OD_candidates}{data.frame. Long OD table demand-to-candidate.}
 
 \item{matrix_OD_candidates_from_id}{character.}
@@ -42,7 +39,8 @@ ufclp(
 
 \item{matrix_OD_candidates_dist}{character.}
 
-\item{cutoff_distance}{numeric. Pairs beyond this distance are dropped.}
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
 
 \item{candidate_fixed_cost}{character. Column in \code{candidate} holding the
 fixed cost of opening each site (f_j).}
@@ -50,7 +48,7 @@ fixed cost of opening each site (f_j).}
 \item{transport_cost_rate}{numeric. Cost per unit distance per unit
 demand (alpha). Default 1.}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}.
@@ -60,4 +58,11 @@ Chooses which candidate sites to open, trading off each site's fixed
 opening cost against the transport cost of serving demand from it.
 Unlike \code{\link[=p_median]{p_median()}}/\code{\link[=mclp]{mclp()}}, the number of open facilities is not
 fixed -- it falls out of the cost tradeoff.
+}
+\details{
+\deqn{\text{Minimize } z = \sum_{j=1}^{m} f_j X_j + \alpha \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}}
+\deqn{\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j}
+\deqn{X_j \in \{0,1\} \qquad Y_{ij} \geq 0}
+where \eqn{f_j} = \code{candidate_fixed_cost}, \eqn{\alpha} = \code{transport_cost_rate},
+\eqn{a_i} = \code{demand_weight}, \eqn{d_{ij}} = distance (OD matrix).
 }

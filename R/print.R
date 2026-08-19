@@ -12,6 +12,7 @@ print.llocalocal_result <- function(x, ...) {
   if (!is.null(x$min_distance))     cat(sprintf("  Min pair distance: %.2f\n", x$min_distance))
   if (!is.null(x$optimal_price))    cat(sprintf("  Optimal price    : %.2f\n", x$optimal_price))
   if (!is.null(x$profit))           cat(sprintf("  Profit           : %.2f\n", x$profit))
+  if (!is.null(x$processing_time))  cat(sprintf("  Processing time  : %.2fs\n", x$processing_time))
   cat("=======================================================\n\n")
   invisible(x)
 }

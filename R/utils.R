@@ -1,12 +1,56 @@
-# The ompr formula syntax below (X[j], Y[i, j], D, Z, ...) uses bare symbols
-# that R CMD check's static analysis cannot resolve as local bindings; they
-# are ompr's index/variable notation, not undefined globals.
-utils::globalVariables(c("i", "j", "X", "Y", "Z", "D"))
-
-#' @import ROI.plugin.glpk
 #' @importFrom sf st_geometry
 #' @noRd
 NULL
+
+#' Solve a sparse MIP directly via Rglpk or highs
+#'
+#' Bypasses `ompr`/`ROI`: builds a plain sparse-matrix MIP once and hands it
+#' straight to the chosen solver's native matrix interface. `ompr`'s own
+#' objective-vector construction (`objective_function.linear_optimization_model`)
+#' assigns coefficients into a `Matrix::sparseVector` one element at a time,
+#' which re-sorts the whole structure on every insertion -- O(n) calls that
+#' are individually cheap but collectively quadratic-ish, costing minutes on
+#' problems with tens of thousands of terms. This path avoids that entirely.
+#'
+#' @param L numeric. Objective coefficients (length = n_vars).
+#' @param A sparse matrix (`Matrix::sparseMatrix`). Constraint matrix
+#'   (n_constraints x n_vars).
+#' @param dir character vector. `"<="`, `">="`, or `"=="` per constraint row.
+#' @param rhs numeric. Right-hand side per constraint row.
+#' @param types character vector. `"B"` (binary), `"C"` (continuous), or
+#'   `"I"` (integer) per variable.
+#' @param lower,upper numeric. Variable bounds (length = n_vars).
+#' @param sense `"min"` or `"max"`.
+#' @param solver `"glpk"` or `"highs"`.
+#' @return list(optimal, objective_value, solution, status).
+#' @noRd
+solve_direct <- function(L, A, dir, rhs, types, lower, upper, sense, solver) {
+  if (!solver %in% c("glpk", "highs"))
+    stop(sprintf("Unknown solver '%s'. Use \"glpk\" or \"highs\".", solver))
+
+  if (solver == "glpk") {
+    is_special <- types != "B"
+    bnds <- if (any(is_special)) {
+      list(lower = list(ind = which(is_special), val = lower[is_special]),
+           upper = list(ind = which(is_special & is.finite(upper)),
+                        val = upper[is_special & is.finite(upper)]))
+    } else NULL
+    r <- Rglpk::Rglpk_solve_LP(obj = L, mat = A, dir = dir, rhs = rhs, types = types,
+                                max = identical(sense, "max"), bounds = bnds)
+    list(optimal = r$status == 0, objective_value = r$optimum, solution = r$solution,
+         status = if (r$status == 0) "optimal" else paste0("glpk_status_", r$status))
+  } else {
+    lhs2 <- ifelse(dir == "<=", -Inf, rhs)
+    rhs2 <- ifelse(dir == ">=", Inf, rhs)
+    types2 <- ifelse(types == "B", "I", types)
+    r <- highs::highs_solve(L = L, lower = lower, upper = upper, A = A,
+                             lhs = lhs2, rhs = rhs2, types = types2,
+                             maximum = identical(sense, "max"))
+    ok <- identical(tolower(r$status_message), "optimal")
+    list(optimal = ok, objective_value = r$objective_value, solution = r$primal_solution,
+         status = if (ok) "optimal" else r$status_message)
+  }
+}
 
 validate_sf <- function(obj, name, id_col) {
   if (!inherits(obj, "sf"))

@@ -10,7 +10,6 @@ uflp(
   demand_weight = NULL,
   candidate,
   candidate_id,
-  candidate_weight = NULL,
   existing_sites = NULL,
   existing_sites_id = NULL,
   existing_sites_weight = NULL,
@@ -22,9 +21,9 @@ uflp(
   matrix_OD_existing_site_from_id = NULL,
   matrix_OD_existing_site_to_id = NULL,
   matrix_OD_existing_site_dist = NULL,
-  cutoff_distance = 1000,
+  cutoff_distance = NULL,
   p_facilities,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -40,8 +39,6 @@ assigned distance. Defaults to 1 if NULL.}
 \item{candidate}{sf POINT. Candidate facility sites.}
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
-
-\item{candidate_weight}{character or NULL. Unused by LSCP.}
 
 \item{existing_sites}{sf POINT or NULL. Facilities already open, forced
 into the solution.}
@@ -66,11 +63,12 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric. Pairs beyond this distance are dropped.}
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
 
 \item{p_facilities}{integer. Number of new facilities to open.}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}.
@@ -80,4 +78,9 @@ The "reverse" of \code{\link[=p_median]{p_median()}}: selects exactly \code{p_fa
 sites to \emph{maximize} the total weighted distance between each demand
 point and its assigned facility, pushing undesirable installations as
 far as possible from demand.
+}
+\details{
+Same constraints as \code{\link[=p_median]{p_median()}}, objective inverted:
+\deqn{\text{Maximize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}}
+where \eqn{a_i} = \code{demand_weight}, \eqn{d_{ij}} = distance (OD matrix).
 }

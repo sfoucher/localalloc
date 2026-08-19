@@ -10,16 +10,15 @@ cflp(
   demand_weight = NULL,
   candidate,
   candidate_id,
-  candidate_weight = NULL,
   matrix_OD_candidates,
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
   matrix_OD_candidates_dist = "distance",
-  cutoff_distance = 1000,
+  cutoff_distance = NULL,
   candidate_fixed_cost,
   candidate_capacity,
   transport_cost_rate = 1,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -33,8 +32,6 @@ cflp(
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
 
-\item{candidate_weight}{character or NULL. Unused.}
-
 \item{matrix_OD_candidates}{data.frame. Long OD table demand-to-candidate.}
 
 \item{matrix_OD_candidates_from_id}{character.}
@@ -43,7 +40,8 @@ cflp(
 
 \item{matrix_OD_candidates_dist}{character.}
 
-\item{cutoff_distance}{numeric. Pairs beyond this distance are dropped.}
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
 
 \item{candidate_fixed_cost}{character. Column in \code{candidate} holding the
 fixed cost of opening each site (f_j).}
@@ -54,7 +52,7 @@ site's maximum capacity (k_j).}
 \item{transport_cost_rate}{numeric. Cost per unit distance per unit
 demand (alpha). Default 1.}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}.
@@ -62,4 +60,9 @@ An object of class \code{llocalocal_result}.
 \description{
 Extends \code{\link[=ufclp]{ufclp()}} with a capacity limit per facility: the total
 weighted demand assigned to a site cannot exceed its capacity.
+}
+\details{
+Same objective and base constraints as \code{\link[=ufclp]{ufclp()}}, plus:
+\deqn{\sum_{i=1}^{n} a_i Y_{ij} \leq k_j X_j, \; \forall j}
+where \eqn{k_j} = \code{candidate_capacity}.
 }

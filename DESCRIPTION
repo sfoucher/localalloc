@@ -5,16 +5,17 @@ Authors@R:
     person("Philippe", "Apparicio", , "philippe.apparicio@usherbrooke.ca", role = c("aut", "cre"))
 Description: Implements ten facility-location optimization models
     (P-Median, P-Center, MCLP, LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP,
-    PMAXCAP) as integer linear programs, solved via ompr and ROI.
+    PMAXCAP) as integer linear programs, built as sparse matrices and
+    solved directly via Rglpk or highs.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Imports:
-    ompr,
-    ompr.roi,
-    ROI.plugin.glpk,
+    highs,
+    Matrix,
+    Rglpk,
     sf
 Suggests:
     testthat (>= 3.0.0),

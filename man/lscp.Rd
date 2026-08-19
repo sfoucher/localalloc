@@ -10,7 +10,6 @@ lscp(
   demand_weight = NULL,
   candidate,
   candidate_id,
-  candidate_weight = NULL,
   existing_sites = NULL,
   existing_sites_id = NULL,
   existing_sites_weight = NULL,
@@ -22,9 +21,9 @@ lscp(
   matrix_OD_existing_site_from_id = NULL,
   matrix_OD_existing_site_to_id = NULL,
   matrix_OD_existing_site_dist = NULL,
-  cutoff_distance = 1000,
+  cutoff_distance = NULL,
   service_radius,
-  solver = "glpk"
+  solver = "highs"
 )
 }
 \arguments{
@@ -39,8 +38,6 @@ weight) -- not validated, since it has no effect.}
 \item{candidate}{sf POINT. Candidate facility sites.}
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
-
-\item{candidate_weight}{character or NULL. Unused by LSCP.}
 
 \item{existing_sites}{sf POINT or NULL. Facilities already open, forced
 into the solution.}
@@ -65,11 +62,12 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric. Pairs beyond this distance are dropped.}
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
 
 \item{service_radius}{numeric. Maximum acceptable distance.}
 
-\item{solver}{character. ROI solver, default \code{"glpk"}.}
+\item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
 An object of class \code{llocalocal_result}.
@@ -77,4 +75,10 @@ An object of class \code{llocalocal_result}.
 \description{
 Finds the minimum number of facilities to open so that every demand
 point is covered by at least one facility within \code{service_radius}.
+}
+\details{
+\deqn{\text{Minimize } z = \sum_{j=1}^{m} X_j}
+\deqn{\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq 1, \; \forall i \qquad X_j \in \{0,1\}, \; \forall j}
+where \eqn{b_{ij} = 1} if site \eqn{j} covers demand \eqn{i} (i.e.
+\eqn{d_{ij} \leq S}, with \eqn{S} = \code{service_radius}), 0 otherwise.
 }

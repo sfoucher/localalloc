@@ -3,6 +3,12 @@
 #' Finds the minimum number of facilities to open so that every demand
 #' point is covered by at least one facility within `service_radius`.
 #'
+#' @details
+#' \deqn{\text{Minimize } z = \sum_{j=1}^{m} X_j}
+#' \deqn{\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq 1, \; \forall i \qquad X_j \in \{0,1\}, \; \forall j}
+#' where \eqn{b_{ij} = 1} if site \eqn{j} covers demand \eqn{i} (i.e.
+#' \eqn{d_{ij} \leq S}, with \eqn{S} = `service_radius`), 0 otherwise.
+#'
 #' @param demand sf POINT. Demand points.
 #' @param demand_id character. Unique id column in `demand`.
 #' @param demand_weight character or NULL. Weight column in `demand`.
@@ -10,7 +16,6 @@
 #'   weight) -- not validated, since it has no effect.
 #' @param candidate sf POINT. Candidate facility sites.
 #' @param candidate_id character. Unique id column in `candidate`.
-#' @param candidate_weight character or NULL. Unused by LSCP.
 #' @param existing_sites sf POINT or NULL. Facilities already open, forced
 #'   into the solution.
 #' @param existing_sites_id character or NULL.
@@ -23,13 +28,14 @@
 #' @param matrix_OD_existing_site_from_id character or NULL.
 #' @param matrix_OD_existing_site_to_id character or NULL.
 #' @param matrix_OD_existing_site_dist character or NULL.
-#' @param cutoff_distance numeric. Pairs beyond this distance are dropped.
+#' @param cutoff_distance numeric or NULL. Pairs beyond this distance are
+#'   dropped. `NULL` (default) means no cutoff.
 #' @param service_radius numeric. Maximum acceptable distance.
-#' @param solver character. ROI solver, default `"glpk"`.
+#' @param solver character. `"highs"` (default) or `"glpk"`.
 #' @return An object of class `llocalocal_result`.
 #' @export
 lscp <- function(demand, demand_id, demand_weight = NULL,
-                  candidate, candidate_id, candidate_weight = NULL,
+                  candidate, candidate_id,
                   existing_sites = NULL, existing_sites_id = NULL,
                   existing_sites_weight = NULL,
                   matrix_OD_candidates,
@@ -40,9 +46,10 @@ lscp <- function(demand, demand_id, demand_weight = NULL,
                   matrix_OD_existing_site_from_id = NULL,
                   matrix_OD_existing_site_to_id = NULL,
                   matrix_OD_existing_site_dist = NULL,
-                  cutoff_distance = 1000,
+                  cutoff_distance = NULL,
                   service_radius,
-                  solver = "glpk") {
+                  solver = "highs") {
+  t0 <- Sys.time()
 
   validate_sf(candidate, "candidate", candidate_id)
   validate_sf(demand, "demand", demand_id)
@@ -69,8 +76,11 @@ lscp <- function(demand, demand_id, demand_weight = NULL,
 
   if (!is.numeric(service_radius) || length(service_radius) != 1 || service_radius <= 0)
     stop("`service_radius` must be a single positive number.")
-  if (!is.numeric(cutoff_distance) || cutoff_distance <= 0)
-    stop("`cutoff_distance` must be a positive number.")
+  if (is.null(cutoff_distance)) {
+    cutoff_distance <- Inf
+  } else if (!is.numeric(cutoff_distance) || cutoff_distance <= 0) {
+    stop("`cutoff_distance` must be NULL (no cutoff) or a positive number.")
+  }
 
   validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                        matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
@@ -111,25 +121,36 @@ lscp <- function(demand, demand_id, demand_weight = NULL,
       length(uncovered), service_radius, paste(ids_demand[uncovered], collapse = ", ")
     ))
 
-  model <- ompr::MIPModel() |>
-    ompr::add_variable(X[j], j = 1:n_all_fac, type = "binary") |>
-    ompr::set_objective(ompr::sum_expr(X[j], j = 1:n_all_fac), sense = "min") |>
-    ompr::add_constraint(ompr::sum_expr(bij[i, j] * X[j], j = 1:n_all_fac) >= 1, i = 1:n_cli)
+  message("LSCP | building sparse MIP...")
+  cov <- which(bij == 1, arr.ind = TRUE)
+  idx_i <- cov[, 1]; idx_j <- cov[, 2]
+  n_vars <- n_all_fac
 
-  if (has_existing)
-    model <- ompr::add_constraint(model, X[j] == 1, j = (n_fac + 1):n_all_fac)
+  L <- rep(1, n_vars)
+  A <- Matrix::sparseMatrix(i = idx_i, j = idx_j, x = 1, dims = c(n_cli, n_vars))
+  dir <- rep(">=", n_cli)
+  rhs <- rep(1, n_cli)
 
-  message(sprintf("LSCP | %d demand points | %d candidates | radius = %g | solver: %s",
+  if (has_existing) {
+    A_force <- Matrix::sparseMatrix(i = seq_len(n_exist), j = n_fac + seq_len(n_exist),
+                                    x = 1, dims = c(n_exist, n_vars))
+    A <- rbind(A, A_force)
+    dir <- c(dir, rep("==", n_exist))
+    rhs <- c(rhs, rep(1, n_exist))
+  }
+
+  types <- rep("B", n_vars)
+  lower <- rep(0, n_vars)
+  upper <- rep(1, n_vars)
+
+  message(sprintf("LSCP | solving | %d demand points | %d candidates | radius = %g | solver: %s",
                    n_cli, n_fac, service_radius, solver))
 
-  result <- tryCatch(
-    ompr::solve_model(model, ompr.roi::with_ROI(solver = solver)),
-    error = function(e) stop(sprintf("Solver '%s' failed: %s", solver, e$message))
-  )
-  if (result$status != "success")
+  result <- solve_direct(L, A, dir, rhs, types, lower, upper, sense = "min", solver = solver)
+  if (!result$optimal)
     warning(sprintf("Non-optimal solution. Status: '%s'", result$status))
 
-  X_vals <- ompr::get_solution(result, X[j])$value
+  X_vals <- result$solution
   selected_j <- which(round(X_vals) == 1)
   ids_selected <- ids_all_fac[selected_j]
   ids_selected_cand <- intersect(ids_selected, ids_cand)
@@ -138,6 +159,7 @@ lscp <- function(demand, demand_id, demand_weight = NULL,
 
   build_result(
     model_type = "lscp", solver_status = result$status, sf_selected = sf_selected,
-    n_open = length(ids_selected), n_demand = n_cli
+    n_open = length(ids_selected), n_demand = n_cli,
+    processing_time = as.numeric(difftime(Sys.time(), t0, units = "secs"))
   )
 }
