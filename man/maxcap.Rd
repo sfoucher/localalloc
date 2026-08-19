@@ -67,7 +67,7 @@ dropped. \code{NULL} (default) means no cutoff.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{localocal_result}.
+An object of class \code{localloc_result}.
 }
 \description{
 Selects at most \code{p_facilities} candidate sites to maximize the weighted

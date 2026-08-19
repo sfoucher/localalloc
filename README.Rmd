@@ -9,7 +9,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# localocal
+# localloc
 
 Ten facility-location optimization models (P-Median, P-Center, MCLP,
 LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP) as integer linear
@@ -46,7 +46,7 @@ if supplied, are forced open ("Required Facilities") and count against
 `p_facilities - k` candidates.
 
 ```{r p-median}
-suppressPackageStartupMessages(library(localocal))
+suppressPackageStartupMessages(library(localloc))
 
 res <- p_median(
   demand = sample_demand, demand_id = "id",

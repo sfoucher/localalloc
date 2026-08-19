@@ -251,7 +251,7 @@
 #'   both the forced-open `existing_sites` and the candidates selected by
 #'   the model. Must be >= the number of `existing_sites` and <= the number
 #'   of candidates plus existing sites.
-#' @return An object of class `localocal_result`. Its `sf_selected` layer
+#' @return An object of class `localloc_result`. Its `sf_selected` layer
 #'   lists *every* open facility -- the selected candidates and the
 #'   forced-open `existing_sites` -- with a `source` column
 #'   (`"candidate"` / `"existing"`) telling them apart.

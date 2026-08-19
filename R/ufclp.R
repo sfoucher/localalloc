@@ -244,7 +244,7 @@
 #' @param transport_cost_rate numeric. Cost per unit distance per unit
 #'   demand (alpha). Default 1.
 #' @param solver character. `"highs"` (default) or `"glpk"`.
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 ufclp <- function(demand, demand_id, demand_weight = NULL,
                    candidate, candidate_id,

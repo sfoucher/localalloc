@@ -1,19 +1,19 @@
-# localocal Implementation Plan
+# localloc Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the `localocal` R package — a clean rewrite and expansion of `localocal` implementing all 10 facility-location ILP models from Table 2.1 of `Essai_MarieHelene.pdf` — replacing the current `localocal` scaffold in this repo, with real tests, docs, and CI.
+**Goal:** Build the `localloc` R package — a clean rewrite and expansion of `localloc` implementing all 10 facility-location ILP models from Table 2.1 of `Essai_MarieHelene.pdf` — replacing the current `localloc` scaffold in this repo, with real tests, docs, and CI.
 
-**Architecture:** Ten thin exported model functions (`R/*.R`), each: validate inputs → build cost matrix/coverage matrix via shared helpers → construct an `ompr::MIPModel()` → solve via `ompr.roi::with_ROI(solver = "glpk")` → hand off to a shared `build_result()` constructor returning an S3 `localocal_result` object. All shared validation / matrix-building / result-construction logic lives in `R/utils.R`. `p_median()`/`uflp()` share a common internal `.assignment_model()` builder (same ILP shape, opposite objective sense).
+**Architecture:** Ten thin exported model functions (`R/*.R`), each: validate inputs → build cost matrix/coverage matrix via shared helpers → construct an `ompr::MIPModel()` → solve via `ompr.roi::with_ROI(solver = "glpk")` → hand off to a shared `build_result()` constructor returning an S3 `localloc_result` object. All shared validation / matrix-building / result-construction logic lives in `R/utils.R`. `p_median()`/`uflp()` share a common internal `.assignment_model()` builder (same ILP shape, opposite objective sense).
 
 **Tech Stack:** R 4.2.1 (`C:\DEV\R\R-4.2.1`, not on PATH), `sf`, `ompr`, `ompr.roi`, `ROI`, `ROI.plugin.glpk`, `dplyr`, `testthat` (edition 3), `roxygen2`, `devtools`, `usethis`.
 
 ## Global Constraints
 
-- Spec: `docs/superpowers/specs/2026-07-29-localocal-design.md` — read it if anything here seems ambiguous.
+- Spec: `docs/superpowers/specs/2026-07-29-localloc-design.md` — read it if anything here seems ambiguous.
 - Language: English for all roxygen docs and `stop()`/`warning()` messages.
 - Solver: all 10 models are linear MIPs solved via `ompr.roi::with_ROI(solver = "glpk")` by default — no nonlinear/MINLP dependency, including `pmaxcap()` (see Task 13).
-- Package location: repo root (`C:\DEV\CLAUDE\R-Package`), replacing the existing `localocal` scaffold in place.
+- Package location: repo root (`C:\DEV\CLAUDE\R-Package`), replacing the existing `localloc` scaffold in place.
 - License: MIT + file LICENSE. Author/Maintainer: Philippe Apparicio <philippe.apparicio@usherbrooke.ca> (`aut`, `cre`).
 - R for all verification commands: `"C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe"` (quote the path — it contains no spaces here, but always quote defensively on Windows).
 - Every test/check run in this plan must actually be executed and its output checked — this environment starts with only base R + `Matrix` installed; Task 1 installs everything else.
@@ -21,7 +21,7 @@
 - Git: commit locally after each task (per repo convention already established this session). No push — user handles GitHub.
 - `existing_sites` semantics (all models that take it): forced open, contributes to `n_open`, never competes for `p_facilities`/`n_facilities` budget.
 - `matrix_OD_*` long tables default to columns named `from_id`/`to_id`/`distance` but the column names are always parameterized (`matrix_OD_candidates_from_id` etc.) — never hardcode them in a model function, always thread the parameter through to `od_to_matrix()`/`validate_cost_matrix()`.
-- `ompr::solve_model()` + `ompr.roi::with_ROI(solver = "glpk")` in this environment returns `result$status == "success"` for an optimal solve, not `"optimal"` (verified directly: a trivial feasible MIP returns `"success"`; an infeasible one returns `"error"`). Every status check in this plan compares against `"success"` — this was a real bug ported verbatim from `localocal`'s original code (which checked `!= "optimal"` and fired a spurious warning on every successful solve) and was caught and fixed during Task 6's review, then corrected everywhere else in this plan before those tasks were dispatched.
+- `ompr::solve_model()` + `ompr.roi::with_ROI(solver = "glpk")` in this environment returns `result$status == "success"` for an optimal solve, not `"optimal"` (verified directly: a trivial feasible MIP returns `"success"`; an infeasible one returns `"error"`). Every status check in this plan compares against `"success"` — this was a real bug ported verbatim from `localloc`'s original code (which checked `!= "optimal"` and fired a spurious warning on every successful solve) and was caught and fixed during Task 6's review, then corrected everywhere else in this plan before those tasks were dispatched.
 
 ---
 
@@ -38,7 +38,7 @@ NEWS.md                              Task 16
 
 R/
   utils.R          Shared validation, matrix-building, result-construction helpers (Task 3)
-  print.R          print.localocal_result() (Task 3)
+  print.R          print.localloc_result() (Task 3)
   lscp.R           Task 4
   mclp.R           Task 5
   p_center.R       Task 6
@@ -53,7 +53,7 @@ R/
 
 data-raw/
   sample-data.R          Generates the synthetic dataset (Task 14)
-  legacy-data.Rdata       Copied from localocal's old data/data.Rdata (Task 2)
+  legacy-data.Rdata       Copied from localloc's old data/data.Rdata (Task 2)
   import-legacy-data.R   Ports the real Bixi dataset (Task 15)
 
 data/                    Generated .rda files (base save() output) — not hand-written
@@ -82,7 +82,7 @@ tests/testthat/
 **Interfaces:**
 - Produces: a working R environment with `sf`, `ompr`, `ompr.roi`, `ROI`, `ROI.plugin.glpk`, `dplyr`, `testthat`, `roxygen2`, `pkgload`, `rcmdcheck`, `knitr`, `rmarkdown` installed and verified. Every later task's `Rscript.exe` calls depend on this.
 
-**What actually happened:** `install.packages()` for the full original list (including `devtools`/`usethis`) was attempted. `devtools`/`usethis` failed: CRAN's Windows binary snapshot for R 4.2 is frozen, there's no Rtools toolchain to compile `httr2`/`gh`'s newer transitive deps (`rlang`, `cli`, etc.) from source, and installing Rtools/upgrading R was out of scope for this plan. Everything else — `sf` 1.0-16, `ompr` 1.0.4, `ompr.roi` 1.0.2, `ROI` 1.0-2, `ROI.plugin.glpk` 1.0-0, `dplyr` 1.1.4, `testthat` 3.2.1.1, `roxygen2` 7.3.1, `pkgload` 1.5.3, `rcmdcheck` 1.4.0, `knitr` 1.39, `rmarkdown` 2.15 — was already present in this R installation's library (left over from prior `localocal` development) and verified working. See the Global Constraints entry for the substitution table used throughout the rest of this plan.
+**What actually happened:** `install.packages()` for the full original list (including `devtools`/`usethis`) was attempted. `devtools`/`usethis` failed: CRAN's Windows binary snapshot for R 4.2 is frozen, there's no Rtools toolchain to compile `httr2`/`gh`'s newer transitive deps (`rlang`, `cli`, etc.) from source, and installing Rtools/upgrading R was out of scope for this plan. Everything else — `sf` 1.0-16, `ompr` 1.0.4, `ompr.roi` 1.0.2, `ROI` 1.0-2, `ROI.plugin.glpk` 1.0-0, `dplyr` 1.1.4, `testthat` 3.2.1.1, `roxygen2` 7.3.1, `pkgload` 1.5.3, `rcmdcheck` 1.4.0, `knitr` 1.39, `rmarkdown` 2.15 — was already present in this R installation's library (left over from prior `localloc` development) and verified working. See the Global Constraints entry for the substitution table used throughout the rest of this plan.
 
 **Verification run:**
 ```
@@ -100,7 +100,7 @@ No commit — this task doesn't change any repo file. Nothing further to dispatc
 - Create: `data-raw/legacy-data.Rdata` (copy of the old `data/data.Rdata`)
 - Modify: `DESCRIPTION` (full rewrite)
 - Modify: `.Rbuildignore`
-- Delete: `NAMESPACE`, `LICENSE`, `LICENSE.md`, `localocal.Rproj`, `Package.zip`, `R/lscp.R`, `R/mclp.R`, `R/p_center.R`, `R/p_median.R`, `R/utilitaires.R`, `man/lscp.Rd`, `man/mclp.Rd`, `man/p_center.Rd`, `man/p_median.Rd`, `tests/testthat.R`, `tests/testthat/test-lscp.R`, `data/data.Rdata` (already copied to `data-raw/` first)
+- Delete: `NAMESPACE`, `LICENSE`, `LICENSE.md`, `localloc.Rproj`, `Package.zip`, `R/lscp.R`, `R/mclp.R`, `R/p_center.R`, `R/p_median.R`, `R/utilitaires.R`, `man/lscp.Rd`, `man/mclp.Rd`, `man/p_center.Rd`, `man/p_median.Rd`, `tests/testthat.R`, `tests/testthat/test-lscp.R`, `data/data.Rdata` (already copied to `data-raw/` first)
 
 **Interfaces:**
 - Produces: a package skeleton that `pkgload::load_all()` succeeds on with zero exported functions. Every later task builds on this DESCRIPTION.
@@ -112,10 +112,10 @@ mkdir -p data-raw
 cp data/data.Rdata data-raw/legacy-data.Rdata
 ```
 
-- [ ] **Step 2: Delete the old localocal scaffold**
+- [ ] **Step 2: Delete the old localloc scaffold**
 
 ```
-rm -f NAMESPACE LICENSE LICENSE.md localocal.Rproj Package.zip
+rm -f NAMESPACE LICENSE LICENSE.md localloc.Rproj Package.zip
 rm -f R/lscp.R R/mclp.R R/p_center.R R/p_median.R R/utilitaires.R
 rm -f man/lscp.Rd man/mclp.Rd man/p_center.Rd man/p_median.Rd
 rm -f tests/testthat.R tests/testthat/test-lscp.R
@@ -125,7 +125,7 @@ rm -f data/data.Rdata
 - [ ] **Step 3: Write the new DESCRIPTION**
 
 ```
-Package: localocal
+Package: localloc
 Title: Facility Location Optimization Models in R
 Version: 0.1.0
 Authors@R:
@@ -216,9 +216,9 @@ Task 2's Step 2 deleted the old `tests/testthat.R`. Write it back (standard test
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(localocal)
+library(localloc)
 
-test_check("localocal")
+test_check("localloc")
 ```
 `Config/testthat/edition: 3` is already set in DESCRIPTION (Step 3) and `tests/testthat/` already exists — no other action needed.
 
@@ -233,10 +233,10 @@ Expected: prints `OK` with no errors (R/ is empty at this point, that's fine).
 
 ```bash
 git add -A
-git commit -m "Rewrite package scaffold as localocal
+git commit -m "Rewrite package scaffold as localloc
 
-Removes the localocal DESCRIPTION/NAMESPACE/R/man/tests scaffold and
-replaces it with a fresh localocal skeleton (empty R/, MIT license,
+Removes the localloc DESCRIPTION/NAMESPACE/R/man/tests scaffold and
+replaces it with a fresh localloc skeleton (empty R/, MIT license,
 testthat edition 3). The old data.Rdata is preserved at
 data-raw/legacy-data.Rdata for the Task 15 data port."
 ```
@@ -260,11 +260,11 @@ data-raw/legacy-data.Rdata for the Task 15 data port."
   - `make_coverage_matrix(cost_matrix, service_radius)` → integer 0/1 matrix
   - `set_weights(sf_obj, id_col, weight_col, name)` → sf with a numeric weight column
   - `extract_assignment(y_vals, ids_from, ids_to, cost_mat)` → data.frame(demand_id, facility_id, distance)
-  - `build_result(model_type, solver_status, sf_selected, ...)` → `localocal_result` object
+  - `build_result(model_type, solver_status, sf_selected, ...)` → `localloc_result` object
   - `validate_fixed_cost(candidate, col, name)` / `validate_capacity(candidate, col, name)`
   - `derive_competitor_baseline(cost_mat_existing)` → numeric vector, row-wise min
   - `enumerate_breakpoints(cost_mat_cand, baseline, t, P_B, max_breakpoints)` → sorted unique numeric vector
-  - `print.localocal_result(x, ...)`
+  - `print.localloc_result(x, ...)`
   - test helpers `mini_fixture()` and `competition_fixture()` (available to every test file automatically — testthat auto-sources `helper-*.R`)
 
 - [ ] **Step 1: Write the fixtures and failing tests**
@@ -380,13 +380,13 @@ test_that("set_weights fills missing weights with 1 and validates the column", {
   expect_error(set_weights(pts, "id", "w", "x"), "negative")
 })
 
-test_that("build_result constructs an localocal_result with arbitrary extra fields", {
+test_that("build_result constructs an localloc_result with arbitrary extra fields", {
   res <- build_result("dummy", "optimal", data.frame(id = 1), foo = 42)
-  expect_s3_class(res, "localocal_result")
+  expect_s3_class(res, "localloc_result")
   expect_equal(res$foo, 42)
 })
 
-test_that("print.localocal_result runs without error", {
+test_that("print.localloc_result runs without error", {
   res <- build_result("dummy", "optimal", data.frame(id = 1), total_cost = 5)
   expect_output(print(res), "DUMMY")
 })
@@ -531,7 +531,7 @@ build_result <- function(model_type, solver_status, sf_selected, ...) {
   structure(
     c(list(model_type = model_type, solver_status = solver_status,
            sf_selected = sf_selected), list(...)),
-    class = "localocal_result"
+    class = "localloc_result"
   )
 }
 
@@ -580,7 +580,7 @@ enumerate_breakpoints <- function(cost_mat_cand, baseline, t, P_B, max_breakpoin
 
 ```r
 #' @export
-print.localocal_result <- function(x, ...) {
+print.localloc_result <- function(x, ...) {
   cat("\n")
   cat("=======================================================\n")
   cat(sprintf("  Model         : %s\n", toupper(x$model_type)))
@@ -615,9 +615,9 @@ Expected: all tests PASS, 0 failures.
 git add R/utils.R R/print.R tests/testthat/helper-fixtures.R tests/testthat/test-utils.R NAMESPACE man/
 git commit -m "Add shared utils, print method, and test fixtures
 
-Ports localocal's validation/matrix-building helpers to English and
+Ports localloc's validation/matrix-building helpers to English and
 extends them for the 6 new models. build_result() is the function
-lscp/mclp/p_center called in localocal without it ever being
+lscp/mclp/p_center called in localloc without it ever being
 defined -- implemented for real here, shared by all ten models."
 ```
 
@@ -631,7 +631,7 @@ defined -- implemented for real here, shared by all ten models."
 
 **Interfaces:**
 - Consumes: `validate_sf()`, `validate_cost_matrix()`, `od_to_matrix()`, `make_coverage_matrix()`, `build_result()` (Task 3); `mini_fixture()` (Task 3, tests only)
-- Produces: `lscp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, service_radius, solver = "glpk")` → `localocal_result` with fields `n_open`, `n_demand`
+- Produces: `lscp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, service_radius, solver = "glpk")` → `localloc_result` with fields `n_open`, `n_demand`
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -647,7 +647,7 @@ test_that("lscp opens the single site that covers everyone", {
   )
   # At radius 6: C1 covers D1(1),D2(2) but not D3(9). C2 covers D1(5),D2(5),D3(6) -- all three.
   # So opening C2 alone suffices; minimum facilities = 1.
-  expect_s3_class(res, "localocal_result")
+  expect_s3_class(res, "localloc_result")
   expect_equal(res$model_type, "lscp")
   expect_equal(nrow(res$sf_selected), 1)
   expect_equal(as.character(res$sf_selected$id), "C2")
@@ -706,7 +706,7 @@ Expected: FAIL — `could not find function "lscp"`.
 #' @param cutoff_distance numeric. Pairs beyond this distance are dropped.
 #' @param service_radius numeric. Maximum acceptable distance.
 #' @param solver character. ROI solver, default `"glpk"`.
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 lscp <- function(demand, demand_id, demand_weight = NULL,
                   candidate, candidate_id, candidate_weight = NULL,
@@ -837,7 +837,7 @@ Expected: all tests PASS.
 git add R/lscp.R tests/testthat/test-lscp.R NAMESPACE man/
 git commit -m "Add lscp()
 
-Ports localocal's LSCP formulation to English, unified onto the
+Ports localloc's LSCP formulation to English, unified onto the
 sf/OD input contract, using the shared utils and build_result()."
 ```
 
@@ -851,9 +851,9 @@ sf/OD input contract, using the shared utils and build_result()."
 
 **Interfaces:**
 - Consumes: `validate_sf()`, `validate_cost_matrix()`, `od_to_matrix()`, `make_coverage_matrix()`, `set_weights()`, `build_result()` (Task 3); `mini_fixture()` (tests)
-- Produces: `mclp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, service_radius, p_facilities, solver = "glpk")` → `localocal_result` with fields `covered_demand`, `n_open`, `n_demand`
+- Produces: `mclp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, service_radius, p_facilities, solver = "glpk")` → `localloc_result` with fields `covered_demand`, `n_open`, `n_demand`
 
-**Design note carried from the spec:** unlike `lscp()`, MCLP does **not** require every demand point to be coverable — that's the whole point of "maximal" vs. "total" coverage. `localocal`'s original `mclp()` incorrectly copy-pasted LSCP's full-coverage `stop()` check; this rewrite drops it for `mclp()` only. `existing_sites`, if supplied, are Required Facilities exactly like in `lscp()`/`p_median()`/`p_center()`: forced open, contribute coverage for free, and don't consume the `p_facilities` budget.
+**Design note carried from the spec:** unlike `lscp()`, MCLP does **not** require every demand point to be coverable — that's the whole point of "maximal" vs. "total" coverage. `localloc`'s original `mclp()` incorrectly copy-pasted LSCP's full-coverage `stop()` check; this rewrite drops it for `mclp()` only. `existing_sites`, if supplied, are Required Facilities exactly like in `lscp()`/`p_median()`/`p_center()`: forced open, contribute coverage for free, and don't consume the `p_facilities` budget.
 
 **Fix (round 1, post-review):** the first version of this task accepted `existing_sites`/`matrix_OD_existing_site*` in the signature but never used them in the body — a silent no-op footgun the Task 5 reviewer caught. The code and test below fix that by merging existing sites into the coverage matrix (same pattern `lscp()` already uses), and correct `@param demand_weight`'s roxygen doc, which had been wrongly inherited from `lscp()` (that doc says demand_weight is "unused" — true for LSCP, false for MCLP, where it drives the objective).
 
@@ -939,7 +939,7 @@ Expected: FAIL — `could not find function "mclp"`.
 #' @param p_facilities integer. Number of *new* facilities to open (the
 #'   budget applies only to `candidate`, not to forced-open
 #'   `existing_sites`).
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 mclp <- function(demand, demand_id, demand_weight = NULL,
                   candidate, candidate_id, candidate_weight = NULL,
@@ -1077,7 +1077,7 @@ Expected: all tests PASS.
 git add R/mclp.R tests/testthat/test-mclp.R NAMESPACE man/
 git commit -m "Add mclp()
 
-Fixes a bug carried over from localocal: mclp() no longer requires
+Fixes a bug carried over from localloc: mclp() no longer requires
 every demand point to be coverable (that requirement belongs to
 lscp(), not to maximal-coverage MCLP)."
 ```
@@ -1092,7 +1092,7 @@ lscp(), not to maximal-coverage MCLP)."
 
 **Interfaces:**
 - Consumes: `validate_sf()`, `validate_cost_matrix()`, `od_to_matrix()`, `replace_inf()`, `extract_assignment()`, `build_result()` (Task 3); `mini_fixture()` (tests)
-- Produces: `p_center(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, p_facilities, solver = "glpk")` → `localocal_result` with fields `assignments`, `max_distance`, `n_open`, `n_demand`
+- Produces: `p_center(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, p_facilities, solver = "glpk")` → `localloc_result` with fields `assignments`, `max_distance`, `n_open`, `n_demand`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1131,7 +1131,7 @@ Expected: FAIL — `could not find function "p_center"`.
 #'
 #' @inheritParams lscp
 #' @param p_facilities integer. Number of facilities to open.
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 p_center <- function(demand, demand_id, demand_weight = NULL,
                       candidate, candidate_id, candidate_weight = NULL,
@@ -1279,8 +1279,8 @@ git commit -m "Add p_center()"
 **Interfaces:**
 - Consumes: `validate_sf()`, `validate_cost_matrix()`, `od_to_matrix()`, `replace_inf()`, `set_weights()`, `extract_assignment()`, `build_result()` (Task 3); `mini_fixture()` (tests)
 - Produces:
-  - `.assignment_model(demand, demand_id, demand_weight, candidate, candidate_id, candidate_weight, existing_sites, existing_sites_id, existing_sites_weight, matrix_OD_candidates, matrix_OD_candidates_from_id, matrix_OD_candidates_to_id, matrix_OD_candidates_dist, matrix_OD_existing_site, matrix_OD_existing_site_from_id, matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist, cutoff_distance, p_facilities, solver, sense, model_type)` → `localocal_result` — internal, not exported, consumed by both `p_median()` (this task) and `uflp()` (Task 8)
-  - `p_median(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, p_facilities, solver = "glpk")` → `localocal_result` with fields `assignments`, `total_cost`, `n_open`, `n_demand`
+  - `.assignment_model(demand, demand_id, demand_weight, candidate, candidate_id, candidate_weight, existing_sites, existing_sites_id, existing_sites_weight, matrix_OD_candidates, matrix_OD_candidates_from_id, matrix_OD_candidates_to_id, matrix_OD_candidates_dist, matrix_OD_existing_site, matrix_OD_existing_site_from_id, matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist, cutoff_distance, p_facilities, solver, sense, model_type)` → `localloc_result` — internal, not exported, consumed by both `p_median()` (this task) and `uflp()` (Task 8)
+  - `p_median(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, p_facilities, solver = "glpk")` → `localloc_result` with fields `assignments`, `total_cost`, `n_open`, `n_demand`
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1463,7 +1463,7 @@ Expected: FAIL — `could not find function "p_median"`.
 #'
 #' @inheritParams lscp
 #' @param p_facilities integer. Number of new facilities to open.
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 p_median <- function(demand, demand_id, demand_weight = NULL,
                       candidate, candidate_id, candidate_weight = NULL,
@@ -1513,7 +1513,7 @@ git commit -m "Add p_median() and the shared .assignment_model() builder
 .assignment_model() factors out the ILP shape common to p_median()
 and uflp() (Task 8) -- same assignment/budget constraints, opposite
 objective sense. Also fixes the poids_demand/weight_demand typo from
-localocal's original p_median.R."
+localloc's original p_median.R."
 ```
 
 ---
@@ -1526,7 +1526,7 @@ localocal's original p_median.R."
 
 **Interfaces:**
 - Consumes: `.assignment_model()` (Task 7, internal — same file's directory, `R/` is one namespace so no import needed); `mini_fixture()` (tests)
-- Produces: `uflp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, p_facilities, solver = "glpk")` → `localocal_result` (same fields as `p_median()`)
+- Produces: `uflp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites = NULL, existing_sites_id = NULL, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site = NULL, matrix_OD_existing_site_from_id = NULL, matrix_OD_existing_site_to_id = NULL, matrix_OD_existing_site_dist = NULL, cutoff_distance = 1000, p_facilities, solver = "glpk")` → `localloc_result` (same fields as `p_median()`)
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1565,7 +1565,7 @@ Expected: FAIL — `could not find function "uflp"`.
 #' far as possible from demand.
 #'
 #' @inheritParams p_median
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 uflp <- function(demand, demand_id, demand_weight = NULL,
                   candidate, candidate_id, candidate_weight = NULL,
@@ -1624,8 +1624,8 @@ git commit -m "Add uflp() via the shared .assignment_model() builder"
 **Interfaces:**
 - Consumes: `validate_sf()`, `validate_fixed_cost()`, `validate_capacity()`, `validate_cost_matrix()`, `od_to_matrix()`, `replace_inf()`, `set_weights()`, `extract_assignment()`, `build_result()` (Task 3); `mini_fixture()` (tests)
 - Produces:
-  - `.fixed_charge_model(demand, demand_id, demand_weight, candidate, candidate_id, candidate_weight, matrix_OD_candidates, matrix_OD_candidates_from_id, matrix_OD_candidates_to_id, matrix_OD_candidates_dist, cutoff_distance, candidate_fixed_cost, candidate_capacity, transport_cost_rate, solver, model_type)` → `localocal_result` — internal, not exported. `candidate_capacity = NULL` means uncapacitated. Consumed by both `ufclp()` (this task) and `cflp()` (Task 10).
-  - `ufclp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", cutoff_distance = 1000, candidate_fixed_cost, transport_cost_rate = 1, solver = "glpk")` → `localocal_result` with fields `assignments`, `fixed_cost_total`, `transport_cost_total`, `total_cost`, `n_open`, `n_demand`
+  - `.fixed_charge_model(demand, demand_id, demand_weight, candidate, candidate_id, candidate_weight, matrix_OD_candidates, matrix_OD_candidates_from_id, matrix_OD_candidates_to_id, matrix_OD_candidates_dist, cutoff_distance, candidate_fixed_cost, candidate_capacity, transport_cost_rate, solver, model_type)` → `localloc_result` — internal, not exported. `candidate_capacity = NULL` means uncapacitated. Consumed by both `ufclp()` (this task) and `cflp()` (Task 10).
+  - `ufclp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", cutoff_distance = 1000, candidate_fixed_cost, transport_cost_rate = 1, solver = "glpk")` → `localloc_result` with fields `assignments`, `fixed_cost_total`, `transport_cost_total`, `total_cost`, `n_open`, `n_demand`
 
 **Note:** no `existing_sites` and no `p_facilities` for this model — facility count is endogenous (traded off against fixed cost), and Required Facilities don't have a natural meaning when opening is itself a cost decision. `cflp()` (Task 10) is `ufclp()` plus one capacity constraint — same rationale as `.assignment_model()` in Task 7, this is factored into one internal builder rather than duplicated across two files.
 
@@ -1776,7 +1776,7 @@ Expected: FAIL — `could not find function "ufclp"`.
 #' @param transport_cost_rate numeric. Cost per unit distance per unit
 #'   demand (alpha). Default 1.
 #' @param solver character. ROI solver, default `"glpk"`.
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 ufclp <- function(demand, demand_id, demand_weight = NULL,
                    candidate, candidate_id, candidate_weight = NULL,
@@ -1834,7 +1834,7 @@ constraint."
 
 **Interfaces:**
 - Consumes: `.fixed_charge_model()` (Task 9, internal — same `R/` namespace, no import needed); `mini_fixture()` (tests)
-- Produces: `cflp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", cutoff_distance = 1000, candidate_fixed_cost, candidate_capacity, transport_cost_rate = 1, solver = "glpk")` → `localocal_result` (same fields as `ufclp()`)
+- Produces: `cflp(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", cutoff_distance = 1000, candidate_fixed_cost, candidate_capacity, transport_cost_rate = 1, solver = "glpk")` → `localloc_result` (same fields as `ufclp()`)
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1891,7 +1891,7 @@ Expected: FAIL — `could not find function "cflp"`.
 #' @inheritParams ufclp
 #' @param candidate_capacity character. Column in `candidate` holding each
 #'   site's maximum capacity (k_j).
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 cflp <- function(demand, demand_id, demand_weight = NULL,
                   candidate, candidate_id, candidate_weight = NULL,
@@ -1943,7 +1943,7 @@ git commit -m "Add cflp() via the shared .fixed_charge_model() builder"
 
 **Interfaces:**
 - Consumes: `validate_sf()`, `validate_cost_matrix()`, `od_to_matrix()`, `replace_inf()`, `build_result()` (Task 3)
-- Produces: `dp(candidate, candidate_id, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", p_facilities, solver = "glpk")` → `localocal_result` with fields `min_distance`, `n_open`
+- Produces: `dp(candidate, candidate_id, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", p_facilities, solver = "glpk")` → `localloc_result` with fields `min_distance`, `n_open`
 
 **Note:** `dp()` takes no `demand`/`existing_sites` at all — pure site-to-site dispersion among `candidate`s, and `matrix_OD_candidates` here means **candidate-to-candidate** distances, not demand-to-candidate.
 
@@ -2010,7 +2010,7 @@ Expected: FAIL — `could not find function "dp"`.
 #' @param matrix_OD_candidates_dist character.
 #' @param p_facilities integer. Number of sites to select (>= 2).
 #' @param solver character. ROI solver, default `"glpk"`.
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 dp <- function(candidate, candidate_id,
                 matrix_OD_candidates,
@@ -2109,7 +2109,7 @@ already implementing DP -- this is a fresh ompr formulation."
 
 **Interfaces:**
 - Consumes: `validate_sf()`, `validate_cost_matrix()`, `od_to_matrix()`, `replace_inf()`, `set_weights()`, `derive_competitor_baseline()`, `build_result()` (Task 3); `competition_fixture()` (Task 3, tests)
-- Produces: `maxcap(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites, existing_sites_id, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site, matrix_OD_existing_site_from_id = "from_id", matrix_OD_existing_site_to_id = "to_id", matrix_OD_existing_site_dist = "distance", cutoff_distance = 1000, p_facilities, solver = "glpk")` → `localocal_result` with fields `covered_demand`, `n_open`, `n_demand`
+- Produces: `maxcap(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites, existing_sites_id, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site, matrix_OD_existing_site_from_id = "from_id", matrix_OD_existing_site_to_id = "to_id", matrix_OD_existing_site_dist = "distance", cutoff_distance = 1000, p_facilities, solver = "glpk")` → `localloc_result` with fields `covered_demand`, `n_open`, `n_demand`
 
 **Competition rule** (per the spec, confirmed with the user): each demand point's competitor baseline b_i^B is its nearest `existing_sites` facility by OD distance; a candidate `j` is in demand `i`'s capture set `p_i` iff `cost_mat_cand[i, j] < baseline[i]`.
 
@@ -2158,7 +2158,7 @@ Expected: FAIL — `could not find function "maxcap"`.
 #' @param matrix_OD_existing_site data.frame. Required.
 #' @param p_facilities integer. Maximum number of new facilities to open
 #'   (the budget constraint is `<=`, not `=`, per eq. 2.35).
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 maxcap <- function(demand, demand_id, demand_weight = NULL,
                     candidate, candidate_id, candidate_weight = NULL,
@@ -2290,7 +2290,7 @@ given parameters without saying how to compute them."
 
 **Interfaces:**
 - Consumes: `validate_sf()`, `validate_cost_matrix()`, `validate_fixed_cost()`, `od_to_matrix()`, `replace_inf()`, `set_weights()`, `derive_competitor_baseline()`, `enumerate_breakpoints()`, `build_result()` (Task 3); `competition_fixture()` (Task 3, tests)
-- Produces: `pmaxcap(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites, existing_sites_id, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site, matrix_OD_existing_site_from_id = "from_id", matrix_OD_existing_site_to_id = "to_id", matrix_OD_existing_site_dist = "distance", cutoff_distance = 1000, marginal_cost = 0, distance_cost_rate = 1, competitor_price, n_facilities, candidate_fixed_cost = NULL, max_breakpoints = 2000, solver = "glpk")` → `localocal_result` with fields `covered_demand`, `optimal_price`, `profit`, `n_open`, `n_demand`
+- Produces: `pmaxcap(demand, demand_id, demand_weight = NULL, candidate, candidate_id, candidate_weight = NULL, existing_sites, existing_sites_id, existing_sites_weight = NULL, matrix_OD_candidates, matrix_OD_candidates_from_id = "from_id", matrix_OD_candidates_to_id = "to_id", matrix_OD_candidates_dist = "distance", matrix_OD_existing_site, matrix_OD_existing_site_from_id = "from_id", matrix_OD_existing_site_to_id = "to_id", matrix_OD_existing_site_dist = "distance", cutoff_distance = 1000, marginal_cost = 0, distance_cost_rate = 1, competitor_price, n_facilities, candidate_fixed_cost = NULL, max_breakpoints = 2000, solver = "glpk")` → `localloc_result` with fields `covered_demand`, `optimal_price`, `profit`, `n_open`, `n_demand`
 
 **Algorithm** (see the spec's "pmaxcap() algorithm" section for the full derivation): profit is piecewise-linear in price for a fixed site selection. The exact global optimum enumerates every breakpoint `P_B + t*baseline[i] - t*cost_mat_cand[i,j]`, solves one linear MIP per breakpoint (site selection + capture, same shape as `maxcap()` at that fixed price), and keeps the best. `max_breakpoints` caps this — under the cap it's exact, over it (e.g. real Sherbrooke-scale data) it warns and subsamples.
 
@@ -2350,7 +2350,7 @@ Expected: FAIL — `could not find function "pmaxcap"`.
 #'   evaluated. Under the cap: exact. Over it: breakpoints are subsampled
 #'   and a warning is raised -- the result is then an approximation, not
 #'   the exact global optimum. Default 2000.
-#' @return An object of class `localocal_result`, with `optimal_price` and
+#' @return An object of class `localloc_result`, with `optimal_price` and
 #'   `profit` fields in addition to the usual ones.
 #' @export
 pmaxcap <- function(demand, demand_id, demand_weight = NULL,
@@ -2520,7 +2520,7 @@ scaling discussion)."
 - Generated: `data/sample_demand.rda`, `data/sample_candidates.rda`, `data/sample_existing.rda`, `data/sample_od_candidates.rda`, `data/sample_od_existing.rda`
 
 **Interfaces:**
-- Produces: package datasets `sample_demand`, `sample_candidates`, `sample_existing`, `sample_od_candidates`, `sample_od_existing`, usable directly as `localocal::sample_demand` etc. after `pkgload::load_all()`/install.
+- Produces: package datasets `sample_demand`, `sample_candidates`, `sample_existing`, `sample_od_candidates`, `sample_od_existing`, usable directly as `localloc::sample_demand` etc. after `pkgload::load_all()`/install.
 
 - [ ] **Step 1: Write the generation script**
 
@@ -2623,7 +2623,7 @@ res <- p_median(
 print(res)
 "
 ```
-Expected: prints a `LOCALOCAL_RESULT`-style summary block with `P_MEDIAN`, `optimal` status, 3 facilities open, a numeric total cost — no errors.
+Expected: prints a `LOCALLOC_RESULT`-style summary block with `P_MEDIAN`, `optimal` status, 3 facilities open, a numeric total cost — no errors.
 
 - [ ] **Step 5: Document and commit**
 
@@ -2652,9 +2652,9 @@ git commit -m "Add the synthetic sample dataset"
 
 `data-raw/import-legacy-data.R`:
 ```r
-# Ports localocal's original data/data.Rdata (the Sherbrooke Bixi case
+# Ports localloc's original data/data.Rdata (the Sherbrooke Bixi case
 # study from Essai_MarieHelene.pdf, preserved at Task 2 as
-# data-raw/legacy-data.Rdata) into localocal's naming convention. Run
+# data-raw/legacy-data.Rdata) into localloc's naming convention. Run
 # once; data-raw/legacy-data.Rdata can be deleted afterwards.
 
 e <- new.env()
@@ -2737,7 +2737,7 @@ rm data-raw/legacy-data.Rdata
 ```bash
 git add data-raw/import-legacy-data.R R/data.R data/ NAMESPACE man/
 git rm data-raw/legacy-data.Rdata
-git commit -m "Port the real Sherbrooke Bixi dataset from localocal
+git commit -m "Port the real Sherbrooke Bixi dataset from localloc
 
 Renames candidate_sites/demand_pop/existing_sites/matrix_D_Candidates/
 matrix_D_ExistingSites to bixi_*. Carries forward the data-licensing
@@ -2777,7 +2777,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# localocal
+# localloc
 
 Ten facility-location optimization models (P-Median, P-Center, MCLP,
 LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP) as integer linear
@@ -2793,7 +2793,7 @@ devtools::install_local(".")
 ## Example
 
 ```{r example}
-library(localocal)
+library(localloc)
 
 res <- p_median(
   demand = sample_demand, demand_id = "id",
@@ -2813,7 +2813,7 @@ this package originates from.
 ```
 "C:\DEV\R\R-4.2.1\bin\x64\Rscript.exe" -e "pkgload::load_all('.'); rmarkdown::render('README.Rmd')"
 ```
-Expected: generates `README.md` with the example's real output inlined (an actual `LOCALOCAL_RESULT` printout), no errors.
+Expected: generates `README.md` with the example's real output inlined (an actual `LOCALLOC_RESULT` printout), no errors.
 
 **If this fails with an `xfun`/`isFALSE`-related error:** this environment's CRAN binary snapshot for R 4.2 is frozen at `xfun` 0.43, which is incompatible with the installed `knitr`/`rmarkdown` versions, and 0.60+ needs compilation (no Rtools available) — the same class of ceiling as the `devtools`/`usethis` gap in the Global Constraints. `rmarkdown::render()` cannot work in this environment; don't keep retrying it. Instead, hand-produce `README.md` to look exactly like what a real render would output:
 1. Run the "Example" chunk's actual R code via Rscript and capture its real printed output verbatim.
@@ -2826,12 +2826,12 @@ Write it directly (no `usethis` scaffolder available — see Global Constraints)
 
 `NEWS.md`:
 ```
-# localocal 0.1.0
+# localloc 0.1.0
 
 * Initial release. Ten facility-location models: `p_median()`,
   `p_center()`, `mclp()`, `lscp()`, `ufclp()`, `cflp()`, `dp()`,
   `uflp()`, `maxcap()`, `pmaxcap()`.
-* Rewrite of the `localocal` package: fixes an undefined
+* Rewrite of the `localloc` package: fixes an undefined
   `.build_result()` call, missing exports, and an unused test file;
   unifies all model functions onto one sf/OD input contract.
 * Ships two datasets: a small synthetic example (`sample_*`) and the
@@ -2978,7 +2978,7 @@ Re-run Step 2 after any fix until clean.
 
 ```bash
 git add -A
-git commit -m "localocal 0.1.0: all 10 models implemented, tested, documented, CI configured
+git commit -m "localloc 0.1.0: all 10 models implemented, tested, documented, CI configured
 
 Passes rcmdcheck::rcmdcheck() with 0 errors/warnings. Ready to push to
 a private GitHub repository (user-initiated, per the design spec)."
@@ -2988,11 +2988,11 @@ a private GitHub repository (user-initiated, per the design spec)."
 
 ## Self-Review
 
-**Spec coverage** (against `docs/superpowers/specs/2026-07-29-localocal-design.md`):
+**Spec coverage** (against `docs/superpowers/specs/2026-07-29-localloc-design.md`):
 - Package identity (name, author, license, language, location) — Task 2. ✅
 - Unified input contract for the original 4 — Tasks 4-7. ✅
 - The 6 new models, their per-model input deltas, competition rule, PMAXCAP algorithm — Tasks 8-13. ✅
-- Internal architecture (`R/utils.R`, `build_result()`, `print.localocal_result()`, `.assignment_model()`, `.fixed_charge_model()`) — Tasks 3, 7, 9. ✅
+- Internal architecture (`R/utils.R`, `build_result()`, `print.localloc_result()`, `.assignment_model()`, `.fixed_charge_model()`) — Tasks 3, 7, 9. ✅
 - Two datasets + provenance/licensing note — Tasks 14-15. ✅
 - Error handling — built into every model task via the shared validators (Task 3). ✅
 - Testing (testthat ed. 3, one file per function + utils) — every task. ✅
@@ -3002,7 +3002,7 @@ a private GitHub repository (user-initiated, per the design spec)."
 
 **Placeholder scan:** no TBD/TODO; every step has runnable commands or complete code; no "similar to Task N" shortcuts — every model function is written out in full even where it resembles another.
 
-**Type consistency:** `build_result(model_type, solver_status, sf_selected, ...)` signature is identical everywhere it's called (Tasks 4-13). `.assignment_model()`'s parameter list (Task 7) matches exactly what `uflp()` (Task 8) passes positionally; `.fixed_charge_model()`'s parameter list (Task 9) matches exactly what `cflp()` (Task 10) passes positionally, including the `candidate_capacity = NULL` uncapacitated-mode convention `ufclp()` (Task 9) also relies on. `localocal_result` field names (`total_cost`, `max_distance`, `covered_demand`, `min_distance`, `optimal_price`, `profit`, `assignments`, `n_open`, `n_demand`) are used consistently between each model's `build_result()` call and `print.localocal_result()` (Task 3).
+**Type consistency:** `build_result(model_type, solver_status, sf_selected, ...)` signature is identical everywhere it's called (Tasks 4-13). `.assignment_model()`'s parameter list (Task 7) matches exactly what `uflp()` (Task 8) passes positionally; `.fixed_charge_model()`'s parameter list (Task 9) matches exactly what `cflp()` (Task 10) passes positionally, including the `candidate_capacity = NULL` uncapacitated-mode convention `ufclp()` (Task 9) also relies on. `localloc_result` field names (`total_cost`, `max_distance`, `covered_demand`, `min_distance`, `optimal_price`, `profit`, `assignments`, `n_open`, `n_demand`) are used consistently between each model's `build_result()` call and `print.localloc_result()` (Task 3).
 
 **Pre-flight fix (before dispatch):** Tasks 9-10 originally wrote `cflp()` as a near-verbatim duplicate of `ufclp()` — the same DRY gap Task 7 already solved for `p_median()`/`uflp()`. Refactored into `.fixed_charge_model()` (mirroring `.assignment_model()`) before any implementer was dispatched, so the review loop doesn't have to catch it twice.
 
