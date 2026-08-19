@@ -8,3 +8,6 @@
 ^CLAUDE\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^_pkgdown\.yml$
+^pkgdown$
+^pkgdown-site$

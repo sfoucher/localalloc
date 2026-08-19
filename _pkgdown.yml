@@ -1,0 +1,5 @@
+url: https://sfoucher.github.io/localloc/
+destination: pkgdown-site
+template:
+  bootstrap: 5
+
