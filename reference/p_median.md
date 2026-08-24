@@ -122,7 +122,7 @@ p_median(
 
 ## Value
 
-An object of class `localloc_result`. Its `sf_selected` layer lists
+An object of class `localalloc_result`. Its `sf_selected` layer lists
 *every* open facility – the selected candidates and the forced-open
 `existing_sites` – with a `source` column (`"candidate"` / `"existing"`)
 telling them apart.

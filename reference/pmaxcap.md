@@ -1,8 +1,8 @@
 # Maximum Capture Problem with Price (PMAXCAP)
 
 Extends
-[`maxcap()`](https://sfoucher.github.io/localloc/reference/maxcap.md) by
-making the firm's price a decision variable. For a fixed set of open
+[`maxcap()`](https://sfoucher.github.io/localalloc/reference/maxcap.md)
+by making the firm's price a decision variable. For a fixed set of open
 sites, profit is piecewise-linear in price (capture only flips at
 threshold breakpoints), so the true global optimum is found by
 enumerating every breakpoint price, solving the resulting MAXCAP-style
@@ -153,5 +153,5 @@ pmaxcap(
 
 ## Value
 
-An object of class `localloc_result`, with `optimal_price` and `profit`
-fields in addition to the usual ones.
+An object of class `localalloc_result`, with `optimal_price` and
+`profit` fields in addition to the usual ones.

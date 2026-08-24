@@ -1,4 +1,4 @@
-# localloc
+# localalloc
 
 Ten facility-location optimization models (P-Median, P-Center, MCLP,
 LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP) as integer linear
@@ -37,7 +37,7 @@ if supplied, are forced open (“Required Facilities”) and count against
 
 ``` r
 
-suppressPackageStartupMessages(library(localloc))
+suppressPackageStartupMessages(library(localalloc))
 
 res <- p_median(
   demand = sample_demand, demand_id = "id",
@@ -57,7 +57,7 @@ res
 #>   Facilities open   : 3
 #>   Demand points     : 15
 #>   Total cost        : 36.96
-#>   Processing time   : 1.26s
+#>   Processing time   : 1.38s
 #> -------------------------------------------------------
 #>   Selected sites (3):
 #>   id fixed_cost capacity    source
@@ -99,7 +99,7 @@ res
 #>   Facilities open   : 3
 #>   Demand points     : 15
 #>   Max distance      : 4.06
-#>   Processing time   : 0.17s
+#>   Processing time   : 0.11s
 #> -------------------------------------------------------
 #>   Selected sites (3):
 #>   id fixed_cost capacity    source
@@ -169,7 +169,7 @@ res
 #>   Facilities open   : 35
 #>   Demand points     : 176
 #>   Covered demand    : 67050.00
-#>   Processing time   : 6.93s
+#>   Processing time   : 4.51s
 #> -------------------------------------------------------
 #>   Selected sites (10 of 35):
 #>    id      lat       lon weight    source type
@@ -217,7 +217,7 @@ res
 #> -------------------------------------------------------
 #>   Facilities open   : 3
 #>   Demand points     : 15
-#>   Processing time   : 0.01s
+#>   Processing time   : 0.00s
 #> -------------------------------------------------------
 #>   Selected sites (3):
 #>   id fixed_cost capacity    source
@@ -257,7 +257,7 @@ res
 #>   Facilities open   : 7
 #>   Demand points     : 15
 #>   Total cost        : 3547.22
-#>   Processing time   : 0.02s
+#>   Processing time   : 0.01s
 #> -------------------------------------------------------
 #>   Selected sites (7):
 #>   id fixed_cost capacity
@@ -304,7 +304,7 @@ res
 #>   Facilities open   : 10
 #>   Demand points     : 15
 #>   Total cost        : 4093.48
-#>   Processing time   : 0.02s
+#>   Processing time   : 0.01s
 #> -------------------------------------------------------
 #>   Selected sites (10):
 #>   id fixed_cost capacity
@@ -362,7 +362,7 @@ res
 #> -------------------------------------------------------
 #>   Facilities open   : 4
 #>   Min pair distance : 657047.22
-#>   Processing time   : 0.09s
+#>   Processing time   : 0.05s
 #> -------------------------------------------------------
 #>   Selected sites (4):
 #>   id fixed_cost capacity
@@ -402,7 +402,7 @@ res
 #>   Facilities open   : 3
 #>   Demand points     : 15
 #>   Total cost        : 18841.00
-#>   Processing time   : 0.03s
+#>   Processing time   : 0.02s
 #> -------------------------------------------------------
 #>   Selected sites (3):
 #>   id fixed_cost capacity    source
@@ -487,7 +487,7 @@ res
 #>   Covered demand    : 2045.00
 #>   Optimal price     : 8.31
 #>   Profit            : 16987.56
-#>   Processing time   : 1.66s
+#>   Processing time   : 1.16s
 #> -------------------------------------------------------
 #>   Selected sites (2):
 #>   id fixed_cost capacity

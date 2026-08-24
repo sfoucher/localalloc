@@ -10,13 +10,14 @@
 
 ## Citation
 
-Apparicio P (2026). *localloc: Facility Location Optimization Models in
-R*. R package version 0.2.0, <https://sfoucher.github.io/localloc/>.
+Apparicio P (2026). *localalloc: Facility Location Optimization Models
+in R*. R package version 0.2.0,
+<https://sfoucher.github.io/localalloc/>.
 
     @Manual{,
-      title = {localloc: Facility Location Optimization Models in R},
+      title = {localalloc: Facility Location Optimization Models in R},
       author = {Philippe Apparicio},
       year = {2026},
       note = {R package version 0.2.0},
-      url = {https://sfoucher.github.io/localloc/},
+      url = {https://sfoucher.github.io/localalloc/},
     }

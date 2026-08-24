@@ -2,13 +2,13 @@
 
 Opens `p_facilities` facilities in total to maximize the weighted demand
 covered within `service_radius`. Unlike
-[`lscp()`](https://sfoucher.github.io/localloc/reference/lscp.md), full
-coverage of every demand point is not required – demand that can't be
-reached by any facility within the radius is simply left uncovered,
+[`lscp()`](https://sfoucher.github.io/localalloc/reference/lscp.md),
+full coverage of every demand point is not required – demand that can't
+be reached by any facility within the radius is simply left uncovered,
 which is the point of "maximal" coverage rather than total coverage.
 `existing_sites`, if supplied, are forced open ("Required Facilities",
 same semantics as
-[`p_median()`](https://sfoucher.github.io/localloc/reference/p_median.md)/[`p_center()`](https://sfoucher.github.io/localloc/reference/p_center.md))
+[`p_median()`](https://sfoucher.github.io/localalloc/reference/p_median.md)/[`p_center()`](https://sfoucher.github.io/localalloc/reference/p_center.md))
 and *count against* `p_facilities`: with `k` existing sites, only
 `p_facilities - k` candidates are selected.
 
@@ -130,7 +130,7 @@ mclp(
 
 ## Value
 
-An object of class `localloc_result`. Its `sf_selected` layer lists
+An object of class `localalloc_result`. Its `sf_selected` layer lists
 *every* open facility – the selected candidates and the forced-open
 `existing_sites` – with a `source` column (`"candidate"` / `"existing"`)
 telling them apart.

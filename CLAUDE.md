@@ -5,12 +5,12 @@ with code in this repository.
 
 ## What this is
 
-`localloc` — an R package implementing ten facility-location
+`localalloc` — an R package implementing ten facility-location
 optimization models (LSCP, MCLP, P-Median, P-Center, UFCLP, CFLP, DP,
 UFLP, MAXCAP, PMAXCAP) as integer linear programs, built as sparse
 matrices and solved directly via `Rglpk` or `highs` (default). Author:
 Philippe Apparicio (USherbrooke). All ten are exported; result objects
-carry class `localloc_result`.
+carry class `localalloc_result`.
 
 The repo root *is* the package root (DESCRIPTION, NAMESPACE, R/, man/,
 tests/ at top level). `data-raw/` holds the scripts that generated
@@ -42,9 +42,9 @@ Ten model functions (`R/lscp.R`, `mclp.R`, `p_center.R`, `p_median.R`,
 shared internal helper file `R/utils.R` (validation, matrix building,
 result extraction, English-language
 [`stop()`](https://rdrr.io/r/base/stop.html)/[`warning()`](https://rdrr.io/r/base/warning.html)
-messages), plus `R/print.R` (`print.localloc_result`) and
+messages), plus `R/print.R` (`print.localalloc_result`) and
 `R/visualize.R`
-([`plot_sites()`](https://sfoucher.github.io/localloc/reference/plot_sites.md)
+([`plot_sites()`](https://sfoucher.github.io/localalloc/reference/plot_sites.md)
 — interactive `mapview` map of candidate/demand/existing sf layers;
 `mapview` is a `Suggests`, guarded by
 [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html)).
@@ -58,7 +58,7 @@ MIP sparse) → build the objective/constraints directly as a
 (never a dense `matrix`, never a symbolic DSL) → dispatch to
 `solve_direct(L, A, dir, rhs, types, lower, upper, sense, solver)` in
 `utils.R` → extract the solution → return
-`structure(list(...), class = "localloc_result")`. Check the actual
+`structure(list(...), class = "localalloc_result")`. Check the actual
 function/NAMESPACE before assuming a helper name — this file has drifted
 from the code before and will again.
 
@@ -109,9 +109,9 @@ Key shared helpers in `utils.R` (all internal, no roxygen `@export`): -
 messages. - `od_to_matrix()` — long OD `data.frame` → wide matrix, `Inf`
 for missing/over-cutoff pairs. - `replace_inf()` — swaps `Inf` for a
 large finite value; still used by
-[`dp()`](https://sfoucher.github.io/localloc/reference/dp.md)
+[`dp()`](https://sfoucher.github.io/localalloc/reference/dp.md)
 (missing-pair fallback, no cutoff concept there) and by
-[`maxcap()`](https://sfoucher.github.io/localloc/reference/maxcap.md)/[`pmaxcap()`](https://sfoucher.github.io/localloc/reference/pmaxcap.md)
+[`maxcap()`](https://sfoucher.github.io/localalloc/reference/maxcap.md)/[`pmaxcap()`](https://sfoucher.github.io/localalloc/reference/pmaxcap.md)
 (as a comparison sentinel for their competitor-baseline `bij` matrix) —
 NOT used by the assignment-style models anymore, since those now only
 create a decision variable for pairs that are already finite. -
@@ -132,7 +132,7 @@ Full test coverage exists — one `test-<model>.R` per model plus
 `data/bixi_*.rda` — real Sherbrooke Bixi case study (5,811 candidates ×
 176 demand pts × 25 existing stations; OD tables use `from_id`/`to_id`/
 `travel_time_p50` columns). A 400-candidate subsample of
-[`p_median()`](https://sfoucher.github.io/localloc/reference/p_median.md)
+[`p_median()`](https://sfoucher.github.io/localalloc/reference/p_median.md)
 solves in ~3s with the current (direct sparse-matrix) engine —
 previously 220s+ under the old `ompr`-based engine. Full-scale (5,811
 candidates) has not been re-benchmarked since the rewrite; the old OOM

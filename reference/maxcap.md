@@ -118,4 +118,4 @@ maxcap(
 
 ## Value
 
-An object of class `localloc_result`.
+An object of class `localalloc_result`.

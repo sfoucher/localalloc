@@ -3,7 +3,7 @@
 Chooses which candidate sites to open, trading off each site's fixed
 opening cost against the transport cost of serving demand from it.
 Unlike
-[`p_median()`](https://sfoucher.github.io/localloc/reference/p_median.md)/[`mclp()`](https://sfoucher.github.io/localloc/reference/mclp.md),
+[`p_median()`](https://sfoucher.github.io/localalloc/reference/p_median.md)/[`mclp()`](https://sfoucher.github.io/localalloc/reference/mclp.md),
 the number of open facilities is not fixed – it falls out of the cost
 tradeoff.
 
@@ -92,4 +92,4 @@ ufclp(
 
 ## Value
 
-An object of class `localloc_result`.
+An object of class `localalloc_result`.
