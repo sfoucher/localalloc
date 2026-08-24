@@ -6,6 +6,13 @@ Sites in `existing_sites` are forced open ("Required Facilities") and
 *count against* `p_facilities`: with `k` existing sites, only
 `p_facilities - k` candidates are selected.
 
+\$\$\text{Minimize } z\$\$ \$\$\text{s.t. } z \geq d\_{ij} Y\_{ij}, \\
+\forall i,j \qquad \sum\_{j=1}^{m} Y\_{ij} = 1, \\ \forall i\$\$
+\$\$Y\_{ij} \leq X_j, \\ \forall i,j \qquad \sum\_{j=1}^{m} X_j = p
+\qquad X_j, Y\_{ij} \in \\0,1\\\$\$ where \\d\_{ij}\\ = distance (OD
+matrix), \\p\\ = `p_facilities`, \\z\\ is the model's `Z` variable
+(maximum distance).
+
 ## Usage
 
 ``` r
@@ -110,12 +117,3 @@ An object of class `localloc_result`. Its `sf_selected` layer lists
 *every* open facility – the selected candidates and the forced-open
 `existing_sites` – with a `source` column (`"candidate"` / `"existing"`)
 telling them apart.
-
-## Details
-
-\$\$\text{Minimize } z\$\$ \$\$\text{s.t. } z \geq d\_{ij} Y\_{ij}, \\
-\forall i,j \qquad \sum\_{j=1}^{m} Y\_{ij} = 1, \\ \forall i\$\$
-\$\$Y\_{ij} \leq X_j, \\ \forall i,j \qquad \sum\_{j=1}^{m} X_j = p
-\qquad X_j, Y\_{ij} \in \\0,1\\\$\$ where \\d\_{ij}\\ = distance (OD
-matrix), \\p\\ = `p_facilities`, \\z\\ is the model's `Z` variable
-(maximum distance).

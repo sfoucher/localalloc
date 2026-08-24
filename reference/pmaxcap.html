@@ -4,12 +4,32 @@ a fixed set of open sites, profit is piecewise-linear in price (capture
 only flips at threshold breakpoints), so the true global optimum is
 found by enumerating every breakpoint price, solving the resulting
 MAXCAP-style linear MIP at each one, and keeping the best. This needs
-no nonlinear/MINLP solver."><meta property="og:description" content="Extends maxcap() by making the firm's price a decision variable. For
+no nonlinear/MINLP solver.
+$$\text{Maximize } \Pi = (P^A - v) \sum_{i \in I} a_i Y_i^A - \sum_{j \in J} f_j X_j^A$$
+$$\text{s.t. } Y_i^A \leq \sum_{j \in N_i(b_i^B)} X_j^A, \; \forall i \qquad \sum_{j=1}^{m} X_j^A = n^A$$
+$$X_j^A, Y_i^A \in \{0,1\}$$
+where \(N_i(b_i^B) = \{j \in J : P^A + t\,d_{ij} &amp;lt; P^B + t\,d_{i,b_i^B}\}\)
+(capture zone, depends on price \(P^A\)), \(P^A\) = optimized
+price (returned in optimal_price), \(v\) = marginal_cost,
+\(f_j\) = candidate_fixed_cost, \(n^A\) = n_facilities,
+\(P^B\) = competitor_price, \(t\) = distance_cost_rate. Solved
+by enumerating price breakpoints (see above), not directly
+as a MINLP."><meta property="og:description" content="Extends maxcap() by making the firm's price a decision variable. For
 a fixed set of open sites, profit is piecewise-linear in price (capture
 only flips at threshold breakpoints), so the true global optimum is
 found by enumerating every breakpoint price, solving the resulting
 MAXCAP-style linear MIP at each one, and keeping the best. This needs
-no nonlinear/MINLP solver."></head><body>
+no nonlinear/MINLP solver.
+$$\text{Maximize } \Pi = (P^A - v) \sum_{i \in I} a_i Y_i^A - \sum_{j \in J} f_j X_j^A$$
+$$\text{s.t. } Y_i^A \leq \sum_{j \in N_i(b_i^B)} X_j^A, \; \forall i \qquad \sum_{j=1}^{m} X_j^A = n^A$$
+$$X_j^A, Y_i^A \in \{0,1\}$$
+where \(N_i(b_i^B) = \{j \in J : P^A + t\,d_{ij} &amp;lt; P^B + t\,d_{i,b_i^B}\}\)
+(capture zone, depends on price \(P^A\)), \(P^A\) = optimized
+price (returned in optimal_price), \(v\) = marginal_cost,
+\(f_j\) = candidate_fixed_cost, \(n^A\) = n_facilities,
+\(P^B\) = competitor_price, \(t\) = distance_cost_rate. Solved
+by enumerating price breakpoints (see above), not directly
+as a MINLP."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -49,6 +69,16 @@ only flips at threshold breakpoints), so the true global optimum is
 found by enumerating every breakpoint price, solving the resulting
 MAXCAP-style linear MIP at each one, and keeping the best. This needs
 no nonlinear/MINLP solver.</p>
+<p>$$\text{Maximize } \Pi = (P^A - v) \sum_{i \in I} a_i Y_i^A - \sum_{j \in J} f_j X_j^A$$
+$$\text{s.t. } Y_i^A \leq \sum_{j \in N_i(b_i^B)} X_j^A, \; \forall i \qquad \sum_{j=1}^{m} X_j^A = n^A$$
+$$X_j^A, Y_i^A \in \{0,1\}$$
+where \(N_i(b_i^B) = \{j \in J : P^A + t\,d_{ij} &lt; P^B + t\,d_{i,b_i^B}\}\)
+(capture zone, depends on price \(P^A\)), \(P^A\) = optimized
+price (returned in <code>optimal_price</code>), \(v\) = <code>marginal_cost</code>,
+\(f_j\) = <code>candidate_fixed_cost</code>, \(n^A\) = <code>n_facilities</code>,
+\(P^B\) = <code>competitor_price</code>, \(t\) = <code>distance_cost_rate</code>. Solved
+by enumerating price breakpoints (see above), not directly
+as a MINLP.</p>
     </div>
 
     <div class="section level2">
@@ -188,19 +218,6 @@ the exact global optimum. Default 2000.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>localloc_result</code>, with <code>optimal_price</code> and
 <code>profit</code> fields in addition to the usual ones.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>$$\text{Maximize } \Pi = (P^A - v) \sum_{i \in I} a_i Y_i^A - \sum_{j \in J} f_j X_j^A$$
-$$\text{s.t. } Y_i^A \leq \sum_{j \in N_i(b_i^B)} X_j^A, \; \forall i \qquad \sum_{j=1}^{m} X_j^A = n^A$$
-$$X_j^A, Y_i^A \in \{0,1\}$$
-where \(N_i(b_i^B) = \{j \in J : P^A + t\,d_{ij} &lt; P^B + t\,d_{i,b_i^B}\}\)
-(capture zone, depends on price \(P^A\)), \(P^A\) = optimized
-price (returned in <code>optimal_price</code>), \(v\) = <code>marginal_cost</code>,
-\(f_j\) = <code>candidate_fixed_cost</code>, \(n^A\) = <code>n_facilities</code>,
-\(P^B\) = <code>competitor_price</code>, \(t\) = <code>distance_cost_rate</code>. Solved
-by enumerating price breakpoints (see description above), not directly
-as a MINLP.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

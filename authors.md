@@ -4,6 +4,10 @@
 
 - **Philippe Apparicio**. Author, maintainer.
 
+- **Samuel Foucher**. Contributor.
+
+- **Marie-Hélène Gadbois Del Carpio**. Contributor.
+
 ## Citation
 
 Apparicio P (2026). *localloc: Facility Location Optimization Models in

@@ -4,6 +4,13 @@ Selects `p_facilities` candidate sites to maximize the minimum pairwise
 distance between opened sites (maximally spread-out placement). Takes no
 demand layer – it's a pure site-dispersion problem among `candidate`s.
 
+\$\$\text{Maximize } D\$\$ \$\$\text{s.t. } D \leq d\_{ij} + (M -
+d\_{ij})(1-X_i) + (M-d\_{ij})(1-X_j), \\ \forall i,j\$\$ \$\$\sum\_{j}
+X_j = P \qquad X_j \in \\0,1\\\$\$ where \\D\\ = `min_distance` in the
+output, \\P\\ = `p_facilities`, and \\M\\ is a sufficiently large
+constant (computed internally as 2 times the maximum distance in the
+matrix).
+
 ## Usage
 
 ``` r
@@ -58,12 +65,3 @@ dp(
 ## Value
 
 An object of class `localloc_result`.
-
-## Details
-
-\$\$\text{Maximize } D\$\$ \$\$\text{s.t. } D \leq d\_{ij} + (M -
-d\_{ij})(1-X_i) + (M-d\_{ij})(1-X_j), \\ \forall i,j\$\$ \$\$\sum\_{j}
-X_j = P \qquad X_j \in \\0,1\\\$\$ where \\D\\ = `min_distance` in the
-output, \\P\\ = `p_facilities`, and \\M\\ is a sufficiently large
-constant (computed internally as 2 times the maximum distance in the
-matrix).

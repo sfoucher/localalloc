@@ -3,11 +3,17 @@
 in total to maximize the total weighted distance between each demand
 point and its assigned facility, pushing undesirable installations as
 far as possible from demand. As in p_median(), existing_sites are
-forced open and count against p_facilities.'><meta property="og:description" content='The "reverse" of p_median(): opens exactly p_facilities facilities
+forced open and count against p_facilities.
+Same constraints as p_median(), objective inverted:
+$$\text{Maximize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}$$
+where \(a_i\) = demand_weight, \(d_{ij}\) = distance (OD matrix).'><meta property="og:description" content='The "reverse" of p_median(): opens exactly p_facilities facilities
 in total to maximize the total weighted distance between each demand
 point and its assigned facility, pushing undesirable installations as
 far as possible from demand. As in p_median(), existing_sites are
-forced open and count against p_facilities.'></head><body>
+forced open and count against p_facilities.
+Same constraints as p_median(), objective inverted:
+$$\text{Maximize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}$$
+where \(a_i\) = demand_weight, \(d_{ij}\) = distance (OD matrix).'></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -46,6 +52,9 @@ in total to <em>maximize</em> the total weighted distance between each demand
 point and its assigned facility, pushing undesirable installations as
 far as possible from demand. As in <code><a href="p_median.html">p_median()</a></code>, <code>existing_sites</code> are
 forced open and count against <code>p_facilities</code>.</p>
+<p>Same constraints as <code><a href="p_median.html">p_median()</a></code>, objective inverted:
+$$\text{Maximize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}$$
+where \(a_i\) = <code>demand_weight</code>, \(d_{ij}\) = distance (OD matrix).</p>
     </div>
 
     <div class="section level2">
@@ -162,12 +171,6 @@ of candidates plus existing sites.</p></dd>
 lists <em>every</em> open facility – the selected candidates and the
 forced-open <code>existing_sites</code> – with a <code>source</code> column
 (<code>"candidate"</code> / <code>"existing"</code>) telling them apart.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Same constraints as <code><a href="p_median.html">p_median()</a></code>, objective inverted:
-$$\text{Maximize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}$$
-where \(a_i\) = <code>demand_weight</code>, \(d_{ij}\) = distance (OD matrix).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

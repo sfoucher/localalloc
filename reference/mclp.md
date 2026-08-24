@@ -12,6 +12,12 @@ same semantics as
 and *count against* `p_facilities`: with `k` existing sites, only
 `p_facilities - k` candidates are selected.
 
+\$\$\text{Maximize } z = \sum\_{i=1}^{n} a_i Y_i\$\$ \$\$\text{s.t. }
+\sum\_{j=1}^{m} b\_{ij} X_j \geq Y_i, \\ \forall i \qquad
+\sum\_{j=1}^{m} X_j = p\$\$ \$\$X_j, Y_i \in \\0,1\\\$\$ where \\a_i\\ =
+`demand_weight`, \\b\_{ij} = 1\\ if \\d\_{ij} \leq S\\
+(`service_radius`), \\p\\ = `p_facilities`.
+
 ## Usage
 
 ``` r
@@ -28,9 +34,9 @@ mclp(
   matrix_OD_candidates_to_id = "to_id",
   matrix_OD_candidates_dist = "distance",
   matrix_OD_existing_site = NULL,
-  matrix_OD_existing_site_from_id = NULL,
-  matrix_OD_existing_site_to_id = NULL,
-  matrix_OD_existing_site_dist = NULL,
+  matrix_OD_existing_site_from_id = "from_id",
+  matrix_OD_existing_site_to_id = "to_id",
+  matrix_OD_existing_site_dist = "distance",
   cutoff_distance = NULL,
   service_radius,
   p_facilities,
@@ -128,11 +134,3 @@ An object of class `localloc_result`. Its `sf_selected` layer lists
 *every* open facility – the selected candidates and the forced-open
 `existing_sites` – with a `source` column (`"candidate"` / `"existing"`)
 telling them apart.
-
-## Details
-
-\$\$\text{Maximize } z = \sum\_{i=1}^{n} a_i Y_i\$\$ \$\$\text{s.t. }
-\sum\_{j=1}^{m} b\_{ij} X_j \geq Y_i, \\ \forall i \qquad
-\sum\_{j=1}^{m} X_j = p\$\$ \$\$X_j, Y_i \in \\0,1\\\$\$ where \\a_i\\ =
-`demand_weight`, \\b\_{ij} = 1\\ if \\d\_{ij} \leq S\\
-(`service_radius`), \\p\\ = `p_facilities`.

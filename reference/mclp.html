@@ -7,7 +7,12 @@ the point of &quot;maximal&quot; coverage rather than total coverage.
 existing_sites, if supplied, are forced open (&quot;Required Facilities&quot;,
 same semantics as p_median()/p_center()) and count against
 p_facilities: with k existing sites, only p_facilities - k
-candidates are selected."><meta property="og:description" content="Opens p_facilities facilities in total to maximize the weighted
+candidates are selected.
+$$\text{Maximize } z = \sum_{i=1}^{n} a_i Y_i$$
+$$\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq Y_i, \; \forall i \qquad \sum_{j=1}^{m} X_j = p$$
+$$X_j, Y_i \in \{0,1\}$$
+where \(a_i\) = demand_weight, \(b_{ij} = 1\) if \(d_{ij} \leq S\)
+(service_radius), \(p\) = p_facilities."><meta property="og:description" content="Opens p_facilities facilities in total to maximize the weighted
 demand covered within service_radius. Unlike lscp(), full coverage
 of every demand point is not required – demand that can't be reached
 by any facility within the radius is simply left uncovered, which is
@@ -15,7 +20,12 @@ the point of &quot;maximal&quot; coverage rather than total coverage.
 existing_sites, if supplied, are forced open (&quot;Required Facilities&quot;,
 same semantics as p_median()/p_center()) and count against
 p_facilities: with k existing sites, only p_facilities - k
-candidates are selected."></head><body>
+candidates are selected.
+$$\text{Maximize } z = \sum_{i=1}^{n} a_i Y_i$$
+$$\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq Y_i, \; \forall i \qquad \sum_{j=1}^{m} X_j = p$$
+$$X_j, Y_i \in \{0,1\}$$
+where \(a_i\) = demand_weight, \(b_{ij} = 1\) if \(d_{ij} \leq S\)
+(service_radius), \(p\) = p_facilities."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -58,6 +68,11 @@ the point of "maximal" coverage rather than total coverage.
 same semantics as <code><a href="p_median.html">p_median()</a></code>/<code><a href="p_center.html">p_center()</a></code>) and <em>count against</em>
 <code>p_facilities</code>: with <code>k</code> existing sites, only <code>p_facilities - k</code>
 candidates are selected.</p>
+<p>$$\text{Maximize } z = \sum_{i=1}^{n} a_i Y_i$$
+$$\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq Y_i, \; \forall i \qquad \sum_{j=1}^{m} X_j = p$$
+$$X_j, Y_i \in \{0,1\}$$
+where \(a_i\) = <code>demand_weight</code>, \(b_{ij} = 1\) if \(d_{ij} \leq S\)
+(<code>service_radius</code>), \(p\) = <code>p_facilities</code>.</p>
     </div>
 
     <div class="section level2">
@@ -75,9 +90,9 @@ candidates are selected.</p>
 <span>  matrix_OD_candidates_to_id <span class="op">=</span> <span class="st">"to_id"</span>,</span>
 <span>  matrix_OD_candidates_dist <span class="op">=</span> <span class="st">"distance"</span>,</span>
 <span>  matrix_OD_existing_site <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  matrix_OD_existing_site_from_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  matrix_OD_existing_site_to_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  matrix_OD_existing_site_dist <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  matrix_OD_existing_site_from_id <span class="op">=</span> <span class="st">"from_id"</span>,</span>
+<span>  matrix_OD_existing_site_to_id <span class="op">=</span> <span class="st">"to_id"</span>,</span>
+<span>  matrix_OD_existing_site_dist <span class="op">=</span> <span class="st">"distance"</span>,</span>
 <span>  cutoff_distance <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">service_radius</span>,</span>
 <span>  <span class="va">p_facilities</span>,</span>
@@ -179,14 +194,6 @@ of candidates plus existing sites.</p></dd>
 lists <em>every</em> open facility – the selected candidates and the
 forced-open <code>existing_sites</code> – with a <code>source</code> column
 (<code>"candidate"</code> / <code>"existing"</code>) telling them apart.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>$$\text{Maximize } z = \sum_{i=1}^{n} a_i Y_i$$
-$$\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq Y_i, \; \forall i \qquad \sum_{j=1}^{m} X_j = p$$
-$$X_j, Y_i \in \{0,1\}$$
-where \(a_i\) = <code>demand_weight</code>, \(b_{ij} = 1\) if \(d_{ij} \leq S\)
-(<code>service_radius</code>), \(p\) = <code>p_facilities</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

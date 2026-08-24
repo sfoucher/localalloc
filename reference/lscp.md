@@ -3,6 +3,11 @@
 Finds the minimum number of facilities to open so that every demand
 point is covered by at least one facility within `service_radius`.
 
+\$\$\text{Minimize } z = \sum\_{j=1}^{m} X_j\$\$ \$\$\text{s.t. }
+\sum\_{j=1}^{m} b\_{ij} X_j \geq 1, \\ \forall i \qquad X_j \in \\0,1\\,
+\\ \forall j\$\$ where \\b\_{ij} = 1\\ if site \\j\\ covers demand \\i\\
+(i.e. \\d\_{ij} \leq S\\, with \\S\\ = `service_radius`), 0 otherwise.
+
 ## Usage
 
 ``` r
@@ -104,10 +109,3 @@ An object of class `localloc_result`. Its `sf_selected` layer lists
 *every* open facility – the selected candidates and the forced-open
 `existing_sites` – with a `source` column (`"candidate"` / `"existing"`)
 telling them apart.
-
-## Details
-
-\$\$\text{Minimize } z = \sum\_{j=1}^{m} X_j\$\$ \$\$\text{s.t. }
-\sum\_{j=1}^{m} b\_{ij} X_j \geq 1, \\ \forall i \qquad X_j \in \\0,1\\,
-\\ \forall j\$\$ where \\b\_{ij} = 1\\ if site \\j\\ covers demand \\i\\
-(i.e. \\d\_{ij} \leq S\\, with \\S\\ = `service_radius`), 0 otherwise.

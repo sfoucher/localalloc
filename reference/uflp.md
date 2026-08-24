@@ -8,6 +8,12 @@ pushing undesirable installations as far as possible from demand. As in
 [`p_median()`](https://sfoucher.github.io/localloc/reference/p_median.md),
 `existing_sites` are forced open and count against `p_facilities`.
 
+Same constraints as
+[`p_median()`](https://sfoucher.github.io/localloc/reference/p_median.md),
+objective inverted: \$\$\text{Maximize } z = \sum\_{i=1}^{n}
+\sum\_{j=1}^{m} a_i d\_{ij} Y\_{ij}\$\$ where \\a_i\\ = `demand_weight`,
+\\d\_{ij}\\ = distance (OD matrix).
+
 ## Usage
 
 ``` r
@@ -120,11 +126,3 @@ An object of class `localloc_result`. Its `sf_selected` layer lists
 *every* open facility – the selected candidates and the forced-open
 `existing_sites` – with a `source` column (`"candidate"` / `"existing"`)
 telling them apart.
-
-## Details
-
-Same constraints as
-[`p_median()`](https://sfoucher.github.io/localloc/reference/p_median.md),
-objective inverted: \$\$\text{Maximize } z = \sum\_{i=1}^{n}
-\sum\_{j=1}^{m} a_i d\_{ij} Y\_{ij}\$\$ where \\a_i\\ = `demand_weight`,
-\\d\_{ij}\\ = distance (OD matrix).

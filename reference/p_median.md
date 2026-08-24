@@ -6,6 +6,14 @@ facility. Sites in `existing_sites` are forced open from the start
 ("Required Facilities") and *count against* `p_facilities`: with `k`
 existing sites, only `p_facilities - k` candidates are selected.
 
+\$\$\text{Minimize } z = \sum\_{i=1}^{n} \sum\_{j=1}^{m} a_i d\_{ij}
+Y\_{ij}\$\$ \$\$\text{s.t. } \sum\_{j=1}^{m} Y\_{ij} = 1, \\ \forall i
+\qquad Y\_{ij} \leq X_j, \\ \forall i,j \qquad \sum\_{j=1}^{m} X_j =
+p\$\$ \$\$X_j, Y\_{ij} \in \\0,1\\\$\$ where \\a_i\\ = `demand_weight`,
+\\d\_{ij}\\ = distance (OD matrix), \\p\\ = `p_facilities`, and \\j\\
+indexes candidate *and* existing sites (the latter fixed at \\X_j =
+1\\).
+
 ## Usage
 
 ``` r
@@ -118,13 +126,3 @@ An object of class `localloc_result`. Its `sf_selected` layer lists
 *every* open facility – the selected candidates and the forced-open
 `existing_sites` – with a `source` column (`"candidate"` / `"existing"`)
 telling them apart.
-
-## Details
-
-\$\$\text{Minimize } z = \sum\_{i=1}^{n} \sum\_{j=1}^{m} a_i d\_{ij}
-Y\_{ij}\$\$ \$\$\text{s.t. } \sum\_{j=1}^{m} Y\_{ij} = 1, \\ \forall i
-\qquad Y\_{ij} \leq X_j, \\ \forall i,j \qquad \sum\_{j=1}^{m} X_j =
-p\$\$ \$\$X_j, Y\_{ij} \in \\0,1\\\$\$ where \\a_i\\ = `demand_weight`,
-\\d\_{ij}\\ = distance (OD matrix), \\p\\ = `p_facilities`, and \\j\\
-indexes candidate *and* existing sites (the latter fixed at \\X_j =
-1\\).

@@ -7,6 +7,13 @@ Unlike
 the number of open facilities is not fixed – it falls out of the cost
 tradeoff.
 
+\$\$\text{Minimize } z = \sum\_{j=1}^{m} f_j X_j + \alpha
+\sum\_{i=1}^{n} \sum\_{j=1}^{m} a_i d\_{ij} Y\_{ij}\$\$ \$\$\text{s.t. }
+\sum\_{j=1}^{m} Y\_{ij} = 1, \\ \forall i \qquad Y\_{ij} \leq X_j, \\
+\forall i,j\$\$ \$\$X_j \in \\0,1\\ \qquad Y\_{ij} \geq 0\$\$ where
+\\f_j\\ = `candidate_fixed_cost`, \\\alpha\\ = `transport_cost_rate`,
+\\a_i\\ = `demand_weight`, \\d\_{ij}\\ = distance (OD matrix).
+
 ## Usage
 
 ``` r
@@ -86,12 +93,3 @@ ufclp(
 ## Value
 
 An object of class `localloc_result`.
-
-## Details
-
-\$\$\text{Minimize } z = \sum\_{j=1}^{m} f_j X_j + \alpha
-\sum\_{i=1}^{n} \sum\_{j=1}^{m} a_i d\_{ij} Y\_{ij}\$\$ \$\$\text{s.t. }
-\sum\_{j=1}^{m} Y\_{ij} = 1, \\ \forall i \qquad Y\_{ij} \leq X_j, \\
-\forall i,j\$\$ \$\$X_j \in \\0,1\\ \qquad Y\_{ij} \geq 0\$\$ where
-\\f_j\\ = `candidate_fixed_cost`, \\\alpha\\ = `transport_cost_rate`,
-\\a_i\\ = `demand_weight`, \\d\_{ij}\\ = distance (OD matrix).

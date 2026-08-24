@@ -3,11 +3,23 @@
 weighted distance between each demand point and its nearest open
 facility. Sites in existing_sites are forced open from the start
 ("Required Facilities") and count against p_facilities: with
-k existing sites, only p_facilities - k candidates are selected.'><meta property="og:description" content='Opens exactly p_facilities facilities in total to minimize the total
+k existing sites, only p_facilities - k candidates are selected.
+$$\text{Minimize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}$$
+$$\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p$$
+$$X_j, Y_{ij} \in \{0,1\}$$
+where \(a_i\) = demand_weight, \(d_{ij}\) = distance (OD matrix),
+\(p\) = p_facilities, and \(j\) indexes candidate and existing
+sites (the latter fixed at \(X_j = 1\)).'><meta property="og:description" content='Opens exactly p_facilities facilities in total to minimize the total
 weighted distance between each demand point and its nearest open
 facility. Sites in existing_sites are forced open from the start
 ("Required Facilities") and count against p_facilities: with
-k existing sites, only p_facilities - k candidates are selected.'></head><body>
+k existing sites, only p_facilities - k candidates are selected.
+$$\text{Minimize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}$$
+$$\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p$$
+$$X_j, Y_{ij} \in \{0,1\}$$
+where \(a_i\) = demand_weight, \(d_{ij}\) = distance (OD matrix),
+\(p\) = p_facilities, and \(j\) indexes candidate and existing
+sites (the latter fixed at \(X_j = 1\)).'></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -46,6 +58,12 @@ weighted distance between each demand point and its nearest open
 facility. Sites in <code>existing_sites</code> are forced open from the start
 ("Required Facilities") and <em>count against</em> <code>p_facilities</code>: with
 <code>k</code> existing sites, only <code>p_facilities - k</code> candidates are selected.</p>
+<p>$$\text{Minimize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}$$
+$$\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p$$
+$$X_j, Y_{ij} \in \{0,1\}$$
+where \(a_i\) = <code>demand_weight</code>, \(d_{ij}\) = distance (OD matrix),
+\(p\) = <code>p_facilities</code>, and \(j\) indexes candidate <em>and</em> existing
+sites (the latter fixed at \(X_j = 1\)).</p>
     </div>
 
     <div class="section level2">
@@ -162,15 +180,6 @@ of candidates plus existing sites.</p></dd>
 lists <em>every</em> open facility – the selected candidates and the
 forced-open <code>existing_sites</code> – with a <code>source</code> column
 (<code>"candidate"</code> / <code>"existing"</code>) telling them apart.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>$$\text{Minimize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}$$
-$$\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p$$
-$$X_j, Y_{ij} \in \{0,1\}$$
-where \(a_i\) = <code>demand_weight</code>, \(d_{ij}\) = distance (OD matrix),
-\(p\) = <code>p_facilities</code>, and \(j\) indexes candidate <em>and</em> existing
-sites (the latter fixed at \(X_j = 1\)).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

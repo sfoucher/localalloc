@@ -9,6 +9,17 @@ enumerating every breakpoint price, solving the resulting MAXCAP-style
 linear MIP at each one, and keeping the best. This needs no
 nonlinear/MINLP solver.
 
+\$\$\text{Maximize } \Pi = (P^A - v) \sum\_{i \in I} a_i Y_i^A -
+\sum\_{j \in J} f_j X_j^A\$\$ \$\$\text{s.t. } Y_i^A \leq \sum\_{j \in
+N_i(b_i^B)} X_j^A, \\ \forall i \qquad \sum\_{j=1}^{m} X_j^A = n^A\$\$
+\$\$X_j^A, Y_i^A \in \\0,1\\\$\$ where \\N_i(b_i^B) = \\j \in J : P^A +
+t\\d\_{ij} \< P^B + t\\d\_{i,b_i^B}\\\\ (capture zone, depends on price
+\\P^A\\), \\P^A\\ = optimized price (returned in `optimal_price`), \\v\\
+= `marginal_cost`, \\f_j\\ = `candidate_fixed_cost`, \\n^A\\ =
+`n_facilities`, \\P^B\\ = `competitor_price`, \\t\\ =
+`distance_cost_rate`. Solved by enumerating price breakpoints (see
+above), not directly as a MINLP.
+
 ## Usage
 
 ``` r
@@ -144,16 +155,3 @@ pmaxcap(
 
 An object of class `localloc_result`, with `optimal_price` and `profit`
 fields in addition to the usual ones.
-
-## Details
-
-\$\$\text{Maximize } \Pi = (P^A - v) \sum\_{i \in I} a_i Y_i^A -
-\sum\_{j \in J} f_j X_j^A\$\$ \$\$\text{s.t. } Y_i^A \leq \sum\_{j \in
-N_i(b_i^B)} X_j^A, \\ \forall i \qquad \sum\_{j=1}^{m} X_j^A = n^A\$\$
-\$\$X_j^A, Y_i^A \in \\0,1\\\$\$ where \\N_i(b_i^B) = \\j \in J : P^A +
-t\\d\_{ij} \< P^B + t\\d\_{i,b_i^B}\\\\ (capture zone, depends on price
-\\P^A\\), \\P^A\\ = optimized price (returned in `optimal_price`), \\v\\
-= `marginal_cost`, \\f_j\\ = `candidate_fixed_cost`, \\n^A\\ =
-`n_facilities`, \\P^B\\ = `competitor_price`, \\t\\ =
-`distance_cost_rate`. Solved by enumerating price breakpoints (see
-description above), not directly as a MINLP.

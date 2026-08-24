@@ -5,6 +5,14 @@ demand captured from a competitor (`existing_sites`), assuming each
 demand point currently patronizes its nearest existing site and switches
 to any newly opened candidate that is closer.
 
+Reduced formulation: omits the tie-breaking mechanism between a
+candidate and the incumbent competitor (assumes no exact-distance ties).
+\$\$\text{Maximize } z = \sum\_{i \in I} w_i Y_i\$\$ \$\$\text{s.t. }
+Y_i \leq \sum\_{j \in p_i} X_j, \\ \forall i \qquad \sum\_{j \in J} X_j
+\leq P\$\$ \$\$X_j, Y_i \in \\0,1\\\$\$ where \\w_i\\ = `demand_weight`,
+\\P\\ = `p_facilities`, and \\p_i\\ is the set of candidate sites closer
+to \\i\\ than its nearest competitor.
+
 ## Usage
 
 ``` r
@@ -111,13 +119,3 @@ maxcap(
 ## Value
 
 An object of class `localloc_result`.
-
-## Details
-
-Reduced formulation: omits the tie-breaking mechanism between a
-candidate and the incumbent competitor (assumes no exact-distance ties).
-\$\$\text{Maximize } z = \sum\_{i \in I} w_i Y_i\$\$ \$\$\text{s.t. }
-Y_i \leq \sum\_{j \in p_i} X_j, \\ \forall i \qquad \sum\_{j \in J} X_j
-\leq P\$\$ \$\$X_j, Y_i \in \\0,1\\\$\$ where \\w_i\\ = `demand_weight`,
-\\P\\ = `p_facilities`, and \\p_i\\ is the set of candidate sites closer
-to \\i\\ than its nearest competitor.

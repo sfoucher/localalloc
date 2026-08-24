@@ -5,6 +5,11 @@ Extends
 a capacity limit per facility: the total weighted demand assigned to a
 site cannot exceed its capacity.
 
+Same objective and base constraints as
+[`ufclp()`](https://sfoucher.github.io/localloc/reference/ufclp.md),
+plus: \$\$\sum\_{i=1}^{n} a_i Y\_{ij} \leq k_j X_j, \\ \forall j\$\$
+where \\k_j\\ = `candidate_capacity`.
+
 ## Usage
 
 ``` r
@@ -90,10 +95,3 @@ cflp(
 ## Value
 
 An object of class `localloc_result`.
-
-## Details
-
-Same objective and base constraints as
-[`ufclp()`](https://sfoucher.github.io/localloc/reference/ufclp.md),
-plus: \$\$\sum\_{i=1}^{n} a_i Y\_{ij} \leq k_j X_j, \\ \forall j\$\$
-where \\k_j\\ = `candidate_capacity`.
