@@ -1,11 +1,11 @@
 #' Maximum Capture Problem (MAXCAP)
 #'
+#' @description
 #' Selects at most `p_facilities` candidate sites to maximize the weighted
 #' demand captured from a competitor (`existing_sites`), assuming each
 #' demand point currently patronizes its nearest existing site and
 #' switches to any newly opened candidate that is closer.
 #'
-#' @details
 #' Reduced formulation: omits the tie-breaking mechanism between a
 #' candidate and the incumbent competitor (assumes no exact-distance
 #' ties).

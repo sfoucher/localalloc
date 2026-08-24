@@ -1,5 +1,6 @@
 #' Maximal Covering Location Problem (MCLP)
 #'
+#'@description
 #' Opens `p_facilities` facilities in total to maximize the weighted
 #' demand covered within `service_radius`. Unlike [lscp()], full coverage
 #' of every demand point is not required -- demand that can't be reached
@@ -10,7 +11,6 @@
 #' `p_facilities`: with `k` existing sites, only `p_facilities - k`
 #' candidates are selected.
 #'
-#' @details
 #' \deqn{\text{Maximize } z = \sum_{i=1}^{n} a_i Y_i}
 #' \deqn{\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq Y_i, \; \forall i \qquad \sum_{j=1}^{m} X_j = p}
 #' \deqn{X_j, Y_i \in \{0,1\}}
@@ -40,9 +40,9 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
                   matrix_OD_candidates_to_id = "to_id",
                   matrix_OD_candidates_dist = "distance",
                   matrix_OD_existing_site = NULL,
-                  matrix_OD_existing_site_from_id = NULL,
-                  matrix_OD_existing_site_to_id = NULL,
-                  matrix_OD_existing_site_dist = NULL,
+                  matrix_OD_existing_site_from_id = "from_id",
+                  matrix_OD_existing_site_to_id = "to_id",
+                  matrix_OD_existing_site_dist = "distance",
                   cutoff_distance = NULL,
                   service_radius,
                   p_facilities,

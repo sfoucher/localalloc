@@ -1,5 +1,6 @@
 #' Maximum Capture Problem with Price (PMAXCAP)
 #'
+#' @description
 #' Extends [maxcap()] by making the firm's price a decision variable. For
 #' a fixed set of open sites, profit is piecewise-linear in price (capture
 #' only flips at threshold breakpoints), so the true global optimum is
@@ -7,7 +8,6 @@
 #' MAXCAP-style linear MIP at each one, and keeping the best. This needs
 #' no nonlinear/MINLP solver.
 #'
-#' @details
 #' \deqn{\text{Maximize } \Pi = (P^A - v) \sum_{i \in I} a_i Y_i^A - \sum_{j \in J} f_j X_j^A}
 #' \deqn{\text{s.t. } Y_i^A \leq \sum_{j \in N_i(b_i^B)} X_j^A, \; \forall i \qquad \sum_{j=1}^{m} X_j^A = n^A}
 #' \deqn{X_j^A, Y_i^A \in \{0,1\}}
@@ -16,7 +16,7 @@
 #' price (returned in `optimal_price`), \eqn{v} = `marginal_cost`,
 #' \eqn{f_j} = `candidate_fixed_cost`, \eqn{n^A} = `n_facilities`,
 #' \eqn{P^B} = `competitor_price`, \eqn{t} = `distance_cost_rate`. Solved
-#' by enumerating price breakpoints (see description above), not directly
+#' by enumerating price breakpoints (see above), not directly
 #' as a MINLP.
 #'
 #' @inheritParams maxcap

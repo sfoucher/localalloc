@@ -17,9 +17,9 @@ mclp(
   matrix_OD_candidates_to_id = "to_id",
   matrix_OD_candidates_dist = "distance",
   matrix_OD_existing_site = NULL,
-  matrix_OD_existing_site_from_id = NULL,
-  matrix_OD_existing_site_to_id = NULL,
-  matrix_OD_existing_site_dist = NULL,
+  matrix_OD_existing_site_from_id = "from_id",
+  matrix_OD_existing_site_to_id = "to_id",
+  matrix_OD_existing_site_dist = "distance",
   cutoff_distance = NULL,
   service_radius,
   p_facilities,
@@ -89,8 +89,7 @@ the point of "maximal" coverage rather than total coverage.
 same semantics as \code{\link[=p_median]{p_median()}}/\code{\link[=p_center]{p_center()}}) and \emph{count against}
 \code{p_facilities}: with \code{k} existing sites, only \code{p_facilities - k}
 candidates are selected.
-}
-\details{
+
 \deqn{\text{Maximize } z = \sum_{i=1}^{n} a_i Y_i}
 \deqn{\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq Y_i, \; \forall i \qquad \sum_{j=1}^{m} X_j = p}
 \deqn{X_j, Y_i \in \{0,1\}}

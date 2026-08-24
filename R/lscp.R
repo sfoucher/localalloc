@@ -1,9 +1,9 @@
 #' Location Set Covering Problem (LSCP)
 #'
+#' @description
 #' Finds the minimum number of facilities to open so that every demand
 #' point is covered by at least one facility within `service_radius`.
 #'
-#' @details
 #' \deqn{\text{Minimize } z = \sum_{j=1}^{m} X_j}
 #' \deqn{\text{s.t. } \sum_{j=1}^{m} b_{ij} X_j \geq 1, \; \forall i \qquad X_j \in \{0,1\}, \; \forall j}
 #' where \eqn{b_{ij} = 1} if site \eqn{j} covers demand \eqn{i} (i.e.

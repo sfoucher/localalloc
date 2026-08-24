@@ -216,12 +216,12 @@
 
 #' Uncapacitated Fixed-charge Facility Location Problem (UFCLP)
 #'
+#'@description
 #' Chooses which candidate sites to open, trading off each site's fixed
 #' opening cost against the transport cost of serving demand from it.
 #' Unlike [p_median()]/[mclp()], the number of open facilities is not
 #' fixed -- it falls out of the cost tradeoff.
 #'
-#' @details
 #' \deqn{\text{Minimize } z = \sum_{j=1}^{m} f_j X_j + \alpha \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}}
 #' \deqn{\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j}
 #' \deqn{X_j \in \{0,1\} \qquad Y_{ij} \geq 0}

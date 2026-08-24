@@ -79,8 +79,7 @@ weighted distance between each demand point and its nearest open
 facility. Sites in \code{existing_sites} are forced open from the start
 ("Required Facilities") and \emph{count against} \code{p_facilities}: with
 \code{k} existing sites, only \code{p_facilities - k} candidates are selected.
-}
-\details{
+
 \deqn{\text{Minimize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}}
 \deqn{\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p}
 \deqn{X_j, Y_{ij} \in \{0,1\}}

@@ -228,13 +228,13 @@
 
 #' P-Median Problem
 #'
+#' @description
 #' Opens exactly `p_facilities` facilities in total to minimize the total
 #' weighted distance between each demand point and its nearest open
 #' facility. Sites in `existing_sites` are forced open from the start
 #' ("Required Facilities") and *count against* `p_facilities`: with
 #' `k` existing sites, only `p_facilities - k` candidates are selected.
 #'
-#' @details
 #' \deqn{\text{Minimize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}}
 #' \deqn{\text{s.t. } \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i \qquad Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p}
 #' \deqn{X_j, Y_{ij} \in \{0,1\}}

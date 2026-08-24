@@ -96,8 +96,7 @@ only flips at threshold breakpoints), so the true global optimum is
 found by enumerating every breakpoint price, solving the resulting
 MAXCAP-style linear MIP at each one, and keeping the best. This needs
 no nonlinear/MINLP solver.
-}
-\details{
+
 \deqn{\text{Maximize } \Pi = (P^A - v) \sum_{i \in I} a_i Y_i^A - \sum_{j \in J} f_j X_j^A}
 \deqn{\text{s.t. } Y_i^A \leq \sum_{j \in N_i(b_i^B)} X_j^A, \; \forall i \qquad \sum_{j=1}^{m} X_j^A = n^A}
 \deqn{X_j^A, Y_i^A \in \{0,1\}}
@@ -106,6 +105,6 @@ where \eqn{N_i(b_i^B) = \{j \in J : P^A + t\,d_{ij} < P^B + t\,d_{i,b_i^B}\}}
 price (returned in \code{optimal_price}), \eqn{v} = \code{marginal_cost},
 \eqn{f_j} = \code{candidate_fixed_cost}, \eqn{n^A} = \code{n_facilities},
 \eqn{P^B} = \code{competitor_price}, \eqn{t} = \code{distance_cost_rate}. Solved
-by enumerating price breakpoints (see description above), not directly
+by enumerating price breakpoints (see above), not directly
 as a MINLP.
 }

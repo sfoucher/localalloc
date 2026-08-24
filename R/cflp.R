@@ -1,9 +1,9 @@
 #' Capacitated Fixed-charge Facility Location Problem (CFLP)
 #'
+#' @description
 #' Extends [ufclp()] with a capacity limit per facility: the total
 #' weighted demand assigned to a site cannot exceed its capacity.
 #'
-#' @details
 #' Same objective and base constraints as [ufclp()], plus:
 #' \deqn{\sum_{i=1}^{n} a_i Y_{ij} \leq k_j X_j, \; \forall j}
 #' where \eqn{k_j} = `candidate_capacity`.

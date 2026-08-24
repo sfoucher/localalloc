@@ -60,8 +60,7 @@ An object of class \code{localocal_result}.
 \description{
 Extends \code{\link[=ufclp]{ufclp()}} with a capacity limit per facility: the total
 weighted demand assigned to a site cannot exceed its capacity.
-}
-\details{
+
 Same objective and base constraints as \code{\link[=ufclp]{ufclp()}}, plus:
 \deqn{\sum_{i=1}^{n} a_i Y_{ij} \leq k_j X_j, \; \forall j}
 where \eqn{k_j} = \code{candidate_capacity}.

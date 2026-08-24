@@ -42,8 +42,7 @@ Selects \code{p_facilities} candidate sites to maximize the minimum pairwise
 distance between opened sites (maximally spread-out placement). Takes
 no demand layer -- it's a pure site-dispersion problem among
 \code{candidate}s.
-}
-\details{
+
 \deqn{\text{Maximize } D}
 \deqn{\text{s.t. } D \leq d_{ij} + (M - d_{ij})(1-X_i) + (M-d_{ij})(1-X_j), \; \forall i,j}
 \deqn{\sum_{j} X_j = P \qquad X_j \in \{0,1\}}

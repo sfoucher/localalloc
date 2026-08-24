@@ -79,8 +79,7 @@ in total to \emph{maximize} the total weighted distance between each demand
 point and its assigned facility, pushing undesirable installations as
 far as possible from demand. As in \code{\link[=p_median]{p_median()}}, \code{existing_sites} are
 forced open and count against \code{p_facilities}.
-}
-\details{
+
 Same constraints as \code{\link[=p_median]{p_median()}}, objective inverted:
 \deqn{\text{Maximize } z = \sum_{i=1}^{n} \sum_{j=1}^{m} a_i d_{ij} Y_{ij}}
 where \eqn{a_i} = \code{demand_weight}, \eqn{d_{ij}} = distance (OD matrix).

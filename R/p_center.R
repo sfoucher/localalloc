@@ -1,12 +1,12 @@
 #' P-Center Problem
 #'
+#'@description
 #' Opens exactly `p_facilities` facilities in total to minimize the maximum
 #' distance between any demand point and its assigned facility (minimax).
 #' Sites in `existing_sites` are forced open ("Required Facilities") and
 #' *count against* `p_facilities`: with `k` existing sites, only
 #' `p_facilities - k` candidates are selected.
 #'
-#' @details
 #' \deqn{\text{Minimize } z}
 #' \deqn{\text{s.t. } z \geq d_{ij} Y_{ij}, \; \forall i,j \qquad \sum_{j=1}^{m} Y_{ij} = 1, \; \forall i}
 #' \deqn{Y_{ij} \leq X_j, \; \forall i,j \qquad \sum_{j=1}^{m} X_j = p \qquad X_j, Y_{ij} \in \{0,1\}}
