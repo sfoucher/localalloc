@@ -1,4 +1,4 @@
-url: https://sfoucher.github.io/localloc/
+url: https://sfoucher.github.io/localalloc/
 destination: pkgdown-site
 template:
   bootstrap: 5

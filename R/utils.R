@@ -271,7 +271,7 @@ build_result <- function(model_type, solver_status, sf_selected, ...) {
   structure(
     c(list(model_type = model_type, solver_status = solver_status,
            sf_selected = sf_selected), list(...)),
-    class = "localloc_result"
+    class = "localalloc_result"
   )
 }
 

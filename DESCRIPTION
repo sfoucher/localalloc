@@ -1,4 +1,4 @@
-Package: localloc
+Package: localalloc
 Title: Facility Location Optimization Models in R
 Version: 0.2.0
 Authors@R: c(
@@ -28,4 +28,4 @@ Suggests:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.1.0
-URL: https://sfoucher.github.io/localloc/
+URL: https://sfoucher.github.io/localalloc/

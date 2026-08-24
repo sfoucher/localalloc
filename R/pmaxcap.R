@@ -31,7 +31,7 @@
 #'   evaluated. Under the cap: exact. Over it: breakpoints are subsampled
 #'   and a warning is raised -- the result is then an approximation, not
 #'   the exact global optimum. Default 2000.
-#' @return An object of class `localloc_result`, with `optimal_price` and
+#' @return An object of class `localalloc_result`, with `optimal_price` and
 #'   `profit` fields in addition to the usual ones.
 #' @export
 pmaxcap <- function(demand, demand_id, demand_weight = NULL,

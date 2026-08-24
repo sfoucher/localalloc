@@ -55,7 +55,7 @@ demand (alpha). Default 1.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{localloc_result}.
+An object of class \code{localalloc_result}.
 }
 \description{
 Extends \code{\link[=ufclp]{ufclp()}} with a capacity limit per facility: the total

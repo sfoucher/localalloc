@@ -23,7 +23,7 @@
 #' @param matrix_OD_candidates_dist character.
 #' @param p_facilities integer. Number of sites to select (>= 2).
 #' @param solver character. `"highs"` (default) or `"glpk"`.
-#' @return An object of class `localloc_result`.
+#' @return An object of class `localalloc_result`.
 #' @export
 dp <- function(candidate, candidate_id,
                 matrix_OD_candidates,
