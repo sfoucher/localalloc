@@ -20,7 +20,7 @@ p_median(
   matrix_OD_existing_site_from_id = "from_id",
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "distance",
-  cutoff = NULL,
+  cutoff_distance = NULL,
   p_facilities,
   solver = "highs"
 )
@@ -60,6 +60,9 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
+\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
+dropped. \code{NULL} (default) means no cutoff.}
+
 \item{p_facilities}{integer. Total number of open facilities, counting
 both the forced-open \code{existing_sites} and the candidates selected by
 the model. Must be >= the number of \code{existing_sites} and <= the number
@@ -68,7 +71,7 @@ of candidates plus existing sites.}
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }
 \value{
-An object of class \code{localocal_result}. Its \code{sf_selected} layer
+An object of class \code{localloc_result}. Its \code{sf_selected} layer
 lists \emph{every} open facility -- the selected candidates and the
 forced-open \code{existing_sites} -- with a \code{source} column
 (\code{"candidate"} / \code{"existing"}) telling them apart.

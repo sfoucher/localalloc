@@ -25,7 +25,7 @@
 #' @param matrix_OD_existing_site data.frame. Required.
 #' @param p_facilities integer. Maximum number of new facilities to open
 #'   (the budget constraint is `<=`, not `=`, per eq. 2.35).
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 maxcap <- function(demand, demand_id, demand_weight = NULL,
                     candidate, candidate_id,

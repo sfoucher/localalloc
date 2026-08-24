@@ -1,21 +1,21 @@
-# localocal — design
+# localloc — design
 
 Date: 2026-07-29
 
 ## Summary
 
-`localocal` is a clean rewrite and expansion of the `localocal` package:
+`localloc` is a clean rewrite and expansion of the `localloc` package:
 all 10 facility-location ILP models from Table 2.1 of the source thesis
 (`Essai_MarieHelene.pdf`) — P-Median, P-Center, MCLP, LSCP, UFCLP, CFLP, DP,
 UFLP, MAXCAP, PMAXCAP — built on `ompr`/`ompr.roi`/`ROI.plugin.glpk`. It
-replaces `localocal` in place in this repo.
+replaces `localloc` in place in this repo.
 
-The original 4 (LSCP, MCLP, P-Center, P-Median) reuse `localocal`'s solver
+The original 4 (LSCP, MCLP, P-Center, P-Median) reuse `localloc`'s solver
 stack and model math as-is (that part was correct); the rewrite fixes
 plumbing bugs (missing `.build_result()`, unexported functions, a
 `poids_demand`/`weight_demand` typo, empty test file) and unifies all four
 onto one input contract. The other 6 (UFCLP, CFLP, DP, UFLP, MAXCAP,
-PMAXCAP) are new — `localocal` never implemented them, and no R or Python
+PMAXCAP) are new — `localloc` never implemented them, and no R or Python
 library is cited in the thesis as covering them either (`spopt` only
 implements the same 4; ArcGIS Network Analyst/TransCAD are proprietary and
 don't map cleanly). These are fresh `ompr` formulations built from the
@@ -23,12 +23,12 @@ thesis's own math (§2.1.3–2.1.5).
 
 ## Package identity
 
-- Name: `localocal`
+- Name: `localloc`
 - Author/maintainer: Philippe Apparicio <philippe.apparicio@usherbrooke.ca> (`aut`, `cre`)
 - License: MIT + file LICENSE
 - Language: English (roxygen docs, `stop()`/`warning()` messages)
-- Location: this repo root, replacing the current `localocal` scaffold
-  (`DESCRIPTION`, `NAMESPACE`, `R/`, `man/`, `Package.zip`, `localocal.Rproj`
+- Location: this repo root, replacing the current `localloc` scaffold
+  (`DESCRIPTION`, `NAMESPACE`, `R/`, `man/`, `Package.zip`, `localloc.Rproj`
   removed/rewritten). `Essai_MarieHelene.pdf` stays, added to
   `.Rbuildignore`.
 - Version control: local git only (already initialized, baseline commit
@@ -61,10 +61,10 @@ Per-model knobs on top of the shared contract:
   distance
 - `p_median()` — `p_facilities`; minimizes total weighted assigned distance
 
-All ten return an S3 object of class `localocal_result` (fields:
+All ten return an S3 object of class `localloc_result` (fields:
 `model_type`, `solver_status`, `sf_selected`, assignment table, and
 model-appropriate stats such as `total_cost` or `max_distance`), printed via
-one shared `print.localocal_result()`.
+one shared `print.localloc_result()`.
 
 ### The other 6 models (UFCLP, CFLP, DP, UFLP, MAXCAP, PMAXCAP)
 
@@ -131,7 +131,7 @@ shortcut taken for convenience.
 - `R/utils.R` — internal (`.`-prefixed or `@noRd`) helpers used across all
   ten:
   - `validate_sf()` / `validate_cost_matrix()` — shape/NA/duplicate-id
-    checks, applied identically across all ten models (`localocal` only
+    checks, applied identically across all ten models (`localloc` only
     gave full validation to `p_median` — this is the actual bug fix, not
     just a rename)
   - `od_to_matrix()` — long OD `data.frame` → wide matrix, `Inf` for
@@ -144,8 +144,8 @@ shortcut taken for convenience.
   - `extract_assignment()` — `ompr::get_solution()` output → assignment
     `data.frame`
   - `build_result()` — the function `lscp`/`mclp`/`p_center` called in
-    `localocal` without it ever being defined; implemented for real this
-    time, shared by all ten models, returns the `localocal_result` object
+    `localloc` without it ever being defined; implemented for real this
+    time, shared by all ten models, returns the `localloc_result` object
   - `validate_fixed_cost()` / `validate_capacity()` — column
     presence/non-negativity checks for `ufclp()`/`cflp()`
   - `derive_competitor_baseline()` — computes `b_i^B`, `p_i`, `T_i` for
@@ -154,7 +154,7 @@ shortcut taken for convenience.
     subsampling for `pmaxcap()`
 - `R/data.R` — `@docType data` documentation for the two bundled datasets
   below
-- `R/print.R` (or folded into `utils.R`) — `print.localocal_result()`
+- `R/print.R` (or folded into `utils.R`) — `print.localloc_result()`
 
 ## Data
 
@@ -166,7 +166,7 @@ convention, scripts not part of the built package):
    sites) with a matching OD `data.frame`. Used in `@examples`, vignette,
    and test fixtures — small enough to solve instantly.
 2. **Ported real dataset** (`data-raw/import-legacy-data.R`) — carries over
-   `localocal`'s `data/data.Rdata` as-is: `candidate_sites` (5,811 pts),
+   `localloc`'s `data/data.Rdata` as-is: `candidate_sites` (5,811 pts),
    `demand_pop` (176 pts), `existing_sites` (25 pts), `matrix_D_Candidates`
    (908,800 rows), `matrix_D_ExistingSites` (4,297 rows). Kept under its
    existing structure/column names; documented as a realistic large-scale
@@ -204,7 +204,7 @@ touching the solver: `sf` class/column checks, NA/duplicate id checks,
 numeric-positivity checks on `cutoff_distance`/`p_facilities`/
 `service_radius`, cost-matrix shape and non-negativity checks, and an
 id-collision check between `candidate` and `existing_sites`. Errors and
-warnings are in English. This is a straight port of `localocal`'s
+warnings are in English. This is a straight port of `localloc`'s
 validation logic (which was solid), just centralized and extended so all
 ten functions get the same guarantees instead of only `p_median`.
 
@@ -222,7 +222,7 @@ ten functions get the same guarantees instead of only `p_median`.
 - `test-pmaxcap.R`'s fixture is sized so `max_breakpoints` never triggers —
   the test verifies the exact breakpoint-enumeration algorithm, not the
   subsampling fallback
-- `localocal` shipped `testthat` scaffolding with an empty test file —
+- `localloc` shipped `testthat` scaffolding with an empty test file —
   this rewrite actually fills it in
 
 ## Guidelines followed

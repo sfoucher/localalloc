@@ -1,12 +1,12 @@
-# localocal — Implementation Report
+# localloc — Implementation Report
 
 Date: 2026-07-30
-Branch merged: `worktree-localocal-implementation` → `main` (fast-forward, commit `fd5b057`)
-Pushed to: `sfoucher/localocal` (private)
+Branch merged: `worktree-localloc-implementation` → `main` (fast-forward, commit `fd5b057`)
+Pushed to: `sfoucher/localloc` (private)
 
 ## What was built
 
-`localocal`, a from-scratch rewrite/expansion of the prior `localocal` package: 10 facility-location optimization models as integer linear programs, solved via `ompr`/`ROI.plugin.glpk`.
+`localloc`, a from-scratch rewrite/expansion of the prior `localloc` package: 10 facility-location optimization models as integer linear programs, solved via `ompr`/`ROI.plugin.glpk`.
 
 - **Models:** `p_median`, `p_center`, `mclp`, `lscp`, `ufclp`, `cflp`, `dp`, `uflp`, `maxcap`, `pmaxcap`
 - **Shared internals:** `R/utils.R` (validation, matrix-building, result construction), `.assignment_model()` (shared by `p_median`/`uflp`), `.fixed_charge_model()` (shared by `ufclp`/`cflp`)
@@ -26,9 +26,9 @@ These were real defects caught by review, not hypothetical — each is confirmed
 3. **Scalar `ompr` variables (`Z`, `D`) extracted with `$value`**, which errors on non-indexed variables (`ompr::get_solution()` returns a plain atomic vector for those, not a data.frame). Caught independently in both `p_center` (Task 6) and `dp` (Task 11); fixed with `as.numeric(...)`.
 4. **`DESCRIPTION` missing `LazyData: true`** — bundled datasets weren't accessible as bare object names without it (Task 14).
 5. **`rmarkdown::render()` fundamentally broken in this environment** — frozen CRAN binary snapshot for R 4.2 has `xfun` 0.43, incompatible with installed `knitr`/`rmarkdown`, and no Rtools to compile a newer one. Worked around by hand-producing `README.md` from genuine captured output (verified byte-for-byte against a live run, twice, by two reviewers) rather than attempting the render (Task 16).
-6. **`ROI.plugin.glpk` declared in `Imports` but never referenced in code** — its solver-registration `.onLoad()` never ran under plain `library(localocal)`, only appearing to work throughout the whole build because `pkgload::load_all()`'s dev-mode loads all Imports regardless of use. Every model would have failed for a real installed-package user with the default solver. Found during the Task 18 `R CMD check` pass; fixed via `@import ROI.plugin.glpk`; independently verified with a real `R CMD INSTALL` + fresh session (not just `load_all()`) by two separate reviewers.
+6. **`ROI.plugin.glpk` declared in `Imports` but never referenced in code** — its solver-registration `.onLoad()` never ran under plain `library(localloc)`, only appearing to work throughout the whole build because `pkgload::load_all()`'s dev-mode loads all Imports regardless of use. Every model would have failed for a real installed-package user with the default solver. Found during the Task 18 `R CMD check` pass; fixed via `@import ROI.plugin.glpk`; independently verified with a real `R CMD INSTALL` + fresh session (not just `load_all()`) by two separate reviewers.
 7. **`sf` demoted to `Suggests` to silence the same "unused import" NOTE** — this took the wrong branch of the same fix as #6: it left a latent bug where `[.sf` subsetting silently degrades to `[.data.frame` (corrupting the geometry column) if `sf`'s namespace never loaded, reachable via the package's own bundled `LazyData` sf datasets without a user ever calling `library(sf)`. Fixed by keeping `sf` in `Imports` with `@importFrom sf st_geometry` instead.
-8. **`print.localocal_result()` under-reported facility count** whenever `existing_sites` was used — it read `nrow(x$sf_selected)` (candidates only) instead of `x$n_open` (which correctly includes forced-open existing sites). Caught only by the whole-branch review, since no single task's tests happened to `print()` a result built with `existing_sites`.
+8. **`print.localloc_result()` under-reported facility count** whenever `existing_sites` was used — it read `nrow(x$sf_selected)` (candidates only) instead of `x$n_open` (which correctly includes forced-open existing sites). Caught only by the whole-branch review, since no single task's tests happened to `print()` a result built with `existing_sites`.
 9. **`od_to_matrix()` crashed with "subscript out of bounds"** whenever a candidate/demand id had zero rows in its OD table — confirmed as a real, live risk: 2 of the bundled `bixi_candidates`' 5,811 ids have zero rows in `bixi_od_candidates`. Fixed by having `od_to_matrix()` build the full requested id universe up front (missing ids become `Inf` rows/columns instead of absent dimensions) across all 8 model files / 14 call sites.
 10. **`bixi_existing`'s 25 ids are a complete subset of `bixi_candidates`'s ids** — every Required-Facilities model's collision guard (`candidate`/`existing_sites` id overlap) hard-errored unconditionally on the bundled real dataset, meaning the flagship dataset could never demonstrate the package's own headline feature. Fixed (per your decision) by softening the guard in `lscp`/`mclp`/`p_center`/`p_median` from a hard `stop()` to auto-excluding the overlapping ids from `candidate` with a `warning()` — `maxcap`/`pmaxcap` deliberately left as hard errors, since `existing_sites` means "the competitor" there, a genuine data contradiction if it overlaps.
 11. **`demand_weight` roxygen docs wrong on 5 of 10 models** — inherited LSCP's "unused" wording via `@inheritParams` chains, factually false for models where the weight actually drives the objective (`p_median`, `uflp`, `maxcap`, `pmaxcap`), and even LSCP's own doc overclaimed "validated for consistency" when it never validated anything. Fixed with model-accurate text in 4 files (2 more corrected automatically via inheritance).
@@ -58,4 +58,4 @@ These were real defects caught by review, not hypothetical — each is confirmed
 
 ## CI status
 
-GitHub Actions (`R-CMD-check.yaml`) was triggered by the push to `main` and was still running (in progress, multi-OS matrix) as of this report — not yet confirmed green on GitHub's runners specifically. Worth checking `gh run list --repo sfoucher/localocal` once it completes.
+GitHub Actions (`R-CMD-check.yaml`) was triggered by the push to `main` and was still running (in progress, multi-OS matrix) as of this report — not yet confirmed green on GitHub's runners specifically. Worth checking `gh run list --repo sfoucher/localloc` once it completes.

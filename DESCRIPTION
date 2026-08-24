@@ -1,8 +1,10 @@
-Package: localocal
+Package: localloc
 Title: Facility Location Optimization Models in R
-Version: 0.1.0
-Authors@R:
-    person("Philippe", "Apparicio", , "philippe.apparicio@usherbrooke.ca", role = c("aut", "cre"))
+Version: 0.2.0
+Authors@R: c(
+    person("Philippe", "Apparicio", , "philippe.apparicio@usherbrooke.ca", role = c("aut", "cre")),
+    person("Samuel", "Foucher", , "samuel.foucher@gmail.com", role = "ctb"),
+    person("Marie-Hélène", "Gadbois Del Carpio", role = "ctb"))
 Description: Implements ten facility-location optimization models
     (P-Median, P-Center, MCLP, LSCP, UFCLP, CFLP, DP, UFLP, MAXCAP,
     PMAXCAP) as integer linear programs, built as sparse matrices and
@@ -26,3 +28,4 @@ Suggests:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.1.0
+URL: https://sfoucher.github.io/localloc/

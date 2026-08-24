@@ -11,7 +11,7 @@
 #' @inheritParams ufclp
 #' @param candidate_capacity character. Column in `candidate` holding each
 #'   site's maximum capacity (k_j).
-#' @return An object of class `localocal_result`.
+#' @return An object of class `localloc_result`.
 #' @export
 cflp <- function(demand, demand_id, demand_weight = NULL,
                   candidate, candidate_id,

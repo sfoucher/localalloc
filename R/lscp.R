@@ -28,7 +28,7 @@
 #'   dropped. `NULL` (default) means no cutoff.
 #' @param service_radius numeric. Maximum acceptable distance.
 #' @param solver character. `"highs"` (default) or `"glpk"`.
-#' @return An object of class `localocal_result`. Its `sf_selected` layer
+#' @return An object of class `localloc_result`. Its `sf_selected` layer
 #'   lists *every* open facility -- the selected candidates and the
 #'   forced-open `existing_sites` -- with a `source` column
 #'   (`"candidate"` / `"existing"`) telling them apart.
