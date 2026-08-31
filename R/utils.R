@@ -260,8 +260,8 @@ bind_selected_sites <- function(candidate, candidate_id, ids_selected,
   # Reconcile differing attribute sets: any column present on only one layer is
   # NA-filled on the other, then columns are put in a common order so `rbind()`
   # lines them up.
-  for (col in setdiff(names(sel), names(ex))) ex[[col]] <- NA
-  for (col in setdiff(names(ex), names(sel))) sel[[col]] <- NA
+  for (col in setdiff(names(sel), names(ex))) ex[[col]] <- rep(NA, nrow(ex))
+  for (col in setdiff(names(ex), names(sel))) sel[[col]] <- rep(NA, nrow(sel))
   ex <- ex[, names(sel), drop = FALSE]
 
   rbind(sel, ex)
