@@ -22,7 +22,7 @@ sites and demand in the Fleurimont/Nations boroughs of Sherbrooke, QC,
 with OD walking-time matrices computed via \code{r5r}.
 }
 \details{
-\code{bixi_candidates} (5,811 pts): candidate sites from OSM street segments
+\code{bixi_candidates} (2,743 pts): candidate sites from OSM street segments
 (cycleway/living_street/footway/residential), cut into 100 m lixels,
 excluding slope > 5\%.
 
