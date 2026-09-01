@@ -14,6 +14,10 @@
 #' \eqn{z} is the model's `Z` variable (maximum distance).
 #'
 #' @inheritParams lscp
+#' @param cutoff numeric or NULL. Maximum impedance, expressed in the units
+#'   of the OD table's distance column -- which may hold a distance *or* a
+#'   travel time. Pairs beyond it are dropped. `NULL` (default) means no
+#'   cutoff.
 #' @param p_facilities integer. Total number of open facilities, counting
 #'   both the forced-open `existing_sites` and the candidates selected by
 #'   the model. Must be >= the number of `existing_sites` and <= the number
@@ -34,7 +38,7 @@ p_center <- function(demand, demand_id,
                       matrix_OD_existing_site_from_id = "from_id",
                       matrix_OD_existing_site_to_id = "to_id",
                       matrix_OD_existing_site_dist = "distance",
-                      cutoff_distance = NULL,
+                      cutoff = NULL,
                       p_facilities,
                       solver = "highs") {
   t0 <- Sys.time()
@@ -64,10 +68,10 @@ p_center <- function(demand, demand_id,
     stop("`p_facilities` must be an integer >= 1.")
   p_facilities <- as.integer(p_facilities)
 
-  if (is.null(cutoff_distance)) {
-    cutoff_distance <- Inf
-  } else if (!is.numeric(cutoff_distance) || cutoff_distance <= 0) {
-    stop("`cutoff_distance` must be NULL (no cutoff) or a positive number.")
+  if (is.null(cutoff)) {
+    cutoff <- Inf
+  } else if (!is.numeric(cutoff) || cutoff <= 0) {
+    stop("`cutoff` must be NULL (no cutoff) or a positive number.")
   }
 
   validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
@@ -96,13 +100,13 @@ p_center <- function(demand, demand_id,
                   n_cli, n_fac))
   cost_mat_cand <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                                 matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                                cutoff_distance, ids_from = ids_demand, ids_to = ids_cand)
+                                cutoff, ids_from = ids_demand, ids_to = ids_cand)
 
   if (has_existing) {
     ids_exist <- as.character(existing_sites[[existing_sites_id]])
     cost_mat_exist <- od_to_matrix(matrix_OD_existing_site, matrix_OD_existing_site_from_id,
                                    matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist,
-                                   cutoff_distance, ids_from = ids_demand, ids_to = ids_exist)
+                                   cutoff, ids_from = ids_demand, ids_to = ids_exist)
     ids_all_fac <- c(ids_cand, ids_exist)
     cost_mat_all <- cbind(cost_mat_cand, cost_mat_exist)
   } else {
@@ -113,15 +117,15 @@ p_center <- function(demand, demand_id,
   cost_mat <- cost_mat_all
 
   # Every demand point must be assigned to exactly one facility, so a point with
-  # no reachable site within `cutoff_distance` makes the model infeasible: its
+  # no reachable site within `cutoff` makes the model infeasible: its
   # assignment row would read `0 == 1`. Stop here naming the offending points
   # rather than letting the solver return an opaque "infeasible".
   # TODO: decide whether this should be a warning (dropping the point) instead.
   uncovered <- ids_demand[!apply(is.finite(cost_mat), 1, any)]
   if (length(uncovered) > 0)
     stop(sprintf(
-      "%d demand point(s) have no candidate or existing site within `cutoff_distance` (%.3g): %s",
-      length(uncovered), cutoff_distance, paste(uncovered, collapse = ", ")
+      "%d demand point(s) have no candidate or existing site within `cutoff` (%.3g): %s",
+      length(uncovered), cutoff, paste(uncovered, collapse = ", ")
     ))
 
   message("P_CENTER | building sparse MIP...")

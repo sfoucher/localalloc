@@ -45,7 +45,7 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
                      matrix_OD_existing_site_from_id = "from_id",
                      matrix_OD_existing_site_to_id = "to_id",
                      matrix_OD_existing_site_dist = "distance",
-                     cutoff_distance = NULL,
+                     cutoff = NULL,
                      marginal_cost = 0,
                      distance_cost_rate = 1,
                      competitor_price,
@@ -75,10 +75,10 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
   if (!is.numeric(max_breakpoints) || max_breakpoints < 1)
     stop("`max_breakpoints` must be an integer >= 1.")
 
-  if (is.null(cutoff_distance)) {
-    cutoff_distance <- Inf
-  } else if (!is.numeric(cutoff_distance) || cutoff_distance <= 0) {
-    stop("`cutoff_distance` must be NULL (no cutoff) or a positive number.")
+  if (is.null(cutoff)) {
+    cutoff <- Inf
+  } else if (!is.numeric(cutoff) || cutoff <= 0) {
+    stop("`cutoff` must be NULL (no cutoff) or a positive number.")
   }
 
   validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
@@ -117,12 +117,12 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
   # forbidding pairs, so every cell must be a number the comparisons can read.
   cost_mat_cand <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                                 matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                                cutoff_distance, ids_from = ids_demand, ids_to = ids_cand)
+                                cutoff, ids_from = ids_demand, ids_to = ids_cand)
   cost_mat_cand <- replace_inf(cost_mat_cand)
 
   cost_mat_exist <- od_to_matrix(matrix_OD_existing_site, matrix_OD_existing_site_from_id,
                                  matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist,
-                                 cutoff_distance, ids_from = ids_demand, ids_to = ids_exist)
+                                 cutoff, ids_from = ids_demand, ids_to = ids_exist)
   cost_mat_exist <- replace_inf(cost_mat_exist)
 
   # baseline_i = distance from demand i to its nearest competitor site. Combined

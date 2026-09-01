@@ -14,7 +14,7 @@ cflp(
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
   matrix_OD_candidates_dist = "distance",
-  cutoff_distance = NULL,
+  cutoff = NULL,
   candidate_fixed_cost,
   candidate_capacity,
   transport_cost_rate = 1,
@@ -40,8 +40,10 @@ cflp(
 
 \item{matrix_OD_candidates_dist}{character.}
 
-\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
-dropped. \code{NULL} (default) means no cutoff.}
+\item{cutoff}{numeric or NULL. Maximum impedance, expressed in the units
+of the OD table's distance column -- which may hold a distance \emph{or} a
+travel time. Pairs beyond it are dropped. \code{NULL} (default) means no
+cutoff.}
 
 \item{candidate_fixed_cost}{character. Column in \code{candidate} holding the
 fixed cost of opening each site (f_j).}

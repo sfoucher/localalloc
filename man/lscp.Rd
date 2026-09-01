@@ -19,7 +19,6 @@ lscp(
   matrix_OD_existing_site_from_id = "from_id",
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "distance",
-  cutoff_distance = NULL,
   service_radius,
   solver = "highs"
 )
@@ -54,10 +53,10 @@ into the solution.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
-dropped. \code{NULL} (default) means no cutoff.}
-
-\item{service_radius}{numeric. Maximum acceptable distance.}
+\item{service_radius}{numeric. Maximum acceptable impedance for a facility
+to count as covering a demand point, expressed in the units of the OD
+table's distance column -- which may hold a distance \emph{or} a travel time.
+This is also the cutoff: pairs beyond it get no coefficient at all.}
 
 \item{solver}{character. \code{"highs"} (default) or \code{"glpk"}.}
 }

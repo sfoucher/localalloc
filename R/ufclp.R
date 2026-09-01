@@ -17,7 +17,7 @@
                                  candidate, candidate_id,
                                  matrix_OD_candidates, matrix_OD_candidates_from_id,
                                  matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                                 cutoff_distance, candidate_fixed_cost, candidate_capacity,
+                                 cutoff, candidate_fixed_cost, candidate_capacity,
                                  transport_cost_rate, solver, model_type) {
   t0 <- Sys.time()
 
@@ -32,10 +32,10 @@
   if (!is.numeric(transport_cost_rate) || transport_cost_rate < 0)
     stop("`transport_cost_rate` must be a non-negative number.")
 
-  if (is.null(cutoff_distance)) {
-    cutoff_distance <- Inf
-  } else if (!is.numeric(cutoff_distance) || cutoff_distance <= 0) {
-    stop("`cutoff_distance` must be NULL (no cutoff) or a positive number.")
+  if (is.null(cutoff)) {
+    cutoff <- Inf
+  } else if (!is.numeric(cutoff) || cutoff <= 0) {
+    stop("`cutoff` must be NULL (no cutoff) or a positive number.")
   }
 
   validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
@@ -64,7 +64,7 @@
     # rows cannot absorb more demand than sum(k_j). Catch that here with a
     # message naming both totals, rather than after a full solve reporting only
     # "infeasible". Note this is necessary but not sufficient -- capacity can
-    # still be unreachable per-point once `cutoff_distance` is applied.
+    # still be unreachable per-point once `cutoff` is applied.
     if (sum(k_cap) < sum(a))
       stop(sprintf(
         "Total capacity (%.2f) is less than total demand (%.2f) -- no feasible assignment exists.",
@@ -76,17 +76,17 @@
                   toupper(model_type), n_cli, n_fac))
   cost_mat <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                            matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                           cutoff_distance, ids_from = ids_demand, ids_to = ids_cand)
+                           cutoff, ids_from = ids_demand, ids_to = ids_cand)
 
   # Every demand point must be assigned to exactly one facility, so a point with
-  # no reachable candidate within `cutoff_distance` makes the model infeasible:
+  # no reachable candidate within `cutoff` makes the model infeasible:
   # its assignment row would read `0 == 1`. Fail here naming the offending points
   # rather than letting the solver return an opaque "infeasible".
   uncovered <- ids_demand[!apply(is.finite(cost_mat), 1, any)]
   if (length(uncovered) > 0)
     stop(sprintf(
-      "%d demand point(s) have no candidate within `cutoff_distance` (%.3g): %s",
-      length(uncovered), cutoff_distance, paste(uncovered, collapse = ", ")
+      "%d demand point(s) have no candidate within `cutoff` (%.3g): %s",
+      length(uncovered), cutoff, paste(uncovered, collapse = ", ")
     ))
 
   message(sprintf("%s | building sparse MIP...", toupper(model_type)))
@@ -237,8 +237,10 @@
 #' @param matrix_OD_candidates_from_id character.
 #' @param matrix_OD_candidates_to_id character.
 #' @param matrix_OD_candidates_dist character.
-#' @param cutoff_distance numeric or NULL. Pairs beyond this distance are
-#'   dropped. `NULL` (default) means no cutoff.
+#' @param cutoff numeric or NULL. Maximum impedance, expressed in the units
+#'   of the OD table's distance column -- which may hold a distance *or* a
+#'   travel time. Pairs beyond it are dropped. `NULL` (default) means no
+#'   cutoff.
 #' @param candidate_fixed_cost character. Column in `candidate` holding the
 #'   fixed cost of opening each site (f_j).
 #' @param transport_cost_rate numeric. Cost per unit distance per unit
@@ -252,7 +254,7 @@ ufclp <- function(demand, demand_id, demand_weight = NULL,
                    matrix_OD_candidates_from_id = "from_id",
                    matrix_OD_candidates_to_id = "to_id",
                    matrix_OD_candidates_dist = "distance",
-                   cutoff_distance = NULL,
+                   cutoff = NULL,
                    candidate_fixed_cost,
                    transport_cost_rate = 1,
                    solver = "highs") {
@@ -265,7 +267,7 @@ ufclp <- function(demand, demand_id, demand_weight = NULL,
     candidate, candidate_id,
     matrix_OD_candidates, matrix_OD_candidates_from_id,
     matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-    cutoff_distance, candidate_fixed_cost, candidate_capacity = NULL,
+    cutoff, candidate_fixed_cost, candidate_capacity = NULL,
     transport_cost_rate = transport_cost_rate, solver = solver,
     model_type = "ufclp"
   )

@@ -22,7 +22,10 @@
 #'   population). This is the primary driver of MCLP's objective --
 #'   candidates are chosen to maximize total weighted covered demand.
 #'   Defaults to 1 if NULL.
-#' @param service_radius numeric. Maximum acceptable distance.
+#' @param service_radius numeric. Maximum acceptable impedance for a facility
+#'   to count as covering a demand point, expressed in the units of the OD
+#'   table's distance column -- which may hold a distance *or* a travel time.
+#'   This is also the cutoff: pairs beyond it get no coefficient at all.
 #' @param p_facilities integer. Total number of open facilities, counting
 #'   both the forced-open `existing_sites` and the candidates selected by
 #'   the model. Must be >= the number of `existing_sites` and <= the number
@@ -43,7 +46,6 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
                   matrix_OD_existing_site_from_id = "from_id",
                   matrix_OD_existing_site_to_id = "to_id",
                   matrix_OD_existing_site_dist = "distance",
-                  cutoff_distance = NULL,
                   service_radius,
                   p_facilities,
                   solver = "highs") {
@@ -72,11 +74,6 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
 
   if (!is.numeric(service_radius) || length(service_radius) != 1 || service_radius <= 0)
     stop("`service_radius` must be a single positive number.")
-  if (is.null(cutoff_distance)) {
-    cutoff_distance <- Inf
-  } else if (!is.numeric(cutoff_distance) || cutoff_distance <= 0) {
-    stop("`cutoff_distance` must be NULL (no cutoff) or a positive number.")
-  }
   if (!is.numeric(p_facilities) || p_facilities < 1)
     stop("`p_facilities` must be an integer >= 1.")
   p_facilities <- as.integer(p_facilities)
@@ -107,15 +104,19 @@ mclp <- function(demand, demand_id, demand_weight = NULL,
     stop(sprintf("`p_facilities` (%d) cannot be lower than the number of `existing_sites` (%d), which are forced open.",
                  p_facilities, n_exist))
 
+  # `service_radius` doubles as the OD cutoff. A pair beyond the radius can only
+  # ever yield b_ij = 0, so dropping it here is free and there is no separate
+  # cutoff argument: a second threshold could only duplicate the radius or
+  # silently override it.
   cost_mat_cand <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                                 matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                                cutoff_distance, ids_from = ids_demand, ids_to = ids_cand)
+                                service_radius, ids_from = ids_demand, ids_to = ids_cand)
 
   if (has_existing) {
     ids_exist <- as.character(existing_sites[[existing_sites_id]])
     cost_mat_exist <- od_to_matrix(matrix_OD_existing_site, matrix_OD_existing_site_from_id,
                                    matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist,
-                                   cutoff_distance, ids_from = ids_demand, ids_to = ids_exist)
+                                   service_radius, ids_from = ids_demand, ids_to = ids_exist)
     ids_all_fac <- c(ids_cand, ids_exist)
     cost_mat_all <- cbind(cost_mat_cand, cost_mat_exist)
   } else {

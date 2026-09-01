@@ -20,7 +20,7 @@ maxcap(
   matrix_OD_existing_site_from_id = "from_id",
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "distance",
-  cutoff_distance = NULL,
+  cutoff = NULL,
   p_facilities,
   solver = "highs"
 )
@@ -58,8 +58,10 @@ by this column. Defaults to 1 if NULL.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
-dropped. \code{NULL} (default) means no cutoff.}
+\item{cutoff}{numeric or NULL. Maximum impedance, expressed in the units
+of the OD table's distance column -- which may hold a distance \emph{or} a
+travel time. Pairs beyond it are dropped. \code{NULL} (default) means no
+cutoff.}
 
 \item{p_facilities}{integer. Maximum number of new facilities to open
 (the budget constraint is \code{<=}, not \code{=}, per eq. 2.35).}

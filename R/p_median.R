@@ -243,6 +243,10 @@
 #' sites (the latter fixed at \eqn{X_j = 1}).
 #'
 #' @inheritParams lscp
+#' @param cutoff numeric or NULL. Maximum impedance, expressed in the units
+#'   of the OD table's distance column -- which may hold a distance *or* a
+#'   travel time. Pairs beyond it are dropped. `NULL` (default) means no
+#'   cutoff.
 #' @param demand_weight character or NULL. Weight column in `demand` (e.g.
 #'   population). This is the primary driver of the objective -- candidates
 #'   are chosen to minimize (p_median) or maximize (uflp) total weighted
@@ -267,7 +271,7 @@ p_median <- function(demand, demand_id, demand_weight = NULL,
                       matrix_OD_existing_site_from_id = "from_id",
                       matrix_OD_existing_site_to_id = "to_id",
                       matrix_OD_existing_site_dist = "distance",
-                      cutoff_distance = NULL,
+                      cutoff = NULL,
                       p_facilities,
                       solver = "highs") {
   .assignment_model(
@@ -278,7 +282,7 @@ p_median <- function(demand, demand_id, demand_weight = NULL,
     matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
     matrix_OD_existing_site, matrix_OD_existing_site_from_id,
     matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist,
-    cutoff_distance, p_facilities, solver,
+    cutoff, p_facilities, solver,
     sense = "min", model_type = "p_median"
   )
 }

@@ -17,6 +17,10 @@
 #' nearest competitor.
 #'
 #' @inheritParams lscp
+#' @param cutoff numeric or NULL. Maximum impedance, expressed in the units
+#'   of the OD table's distance column -- which may hold a distance *or* a
+#'   travel time. Pairs beyond it are dropped. `NULL` (default) means no
+#'   cutoff.
 #' @param demand_weight character or NULL. Weight column in `demand` (e.g.
 #'   population). This drives the objective -- captured demand is weighted
 #'   by this column. Defaults to 1 if NULL.
@@ -38,7 +42,7 @@ maxcap <- function(demand, demand_id, demand_weight = NULL,
                     matrix_OD_existing_site_from_id = "from_id",
                     matrix_OD_existing_site_to_id = "to_id",
                     matrix_OD_existing_site_dist = "distance",
-                    cutoff_distance = NULL,
+                    cutoff = NULL,
                     p_facilities,
                     solver = "highs") {
   t0 <- Sys.time()
@@ -65,10 +69,10 @@ maxcap <- function(demand, demand_id, demand_weight = NULL,
     stop("`p_facilities` must be an integer >= 1.")
   p_facilities <- as.integer(p_facilities)
 
-  if (is.null(cutoff_distance)) {
-    cutoff_distance <- Inf
-  } else if (!is.numeric(cutoff_distance) || cutoff_distance <= 0) {
-    stop("`cutoff_distance` must be NULL (no cutoff) or a positive number.")
+  if (is.null(cutoff)) {
+    cutoff <- Inf
+  } else if (!is.numeric(cutoff) || cutoff <= 0) {
+    stop("`cutoff` must be NULL (no cutoff) or a positive number.")
   }
 
   validate_cost_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
@@ -99,17 +103,17 @@ maxcap <- function(demand, demand_id, demand_weight = NULL,
   # `<` test below can read. The large finite sentinel makes the comparison come
   # out the sensible way in both directions -- a candidate pair missing from the
   # OD table never beats a real competitor distance, while a demand point with no
-  # competitor within `cutoff_distance` gets a large baseline and is therefore
+  # competitor within `cutoff` gets a large baseline and is therefore
   # capturable by any candidate that actually reaches it (correct: the competitor
   # does not serve that point at all).
   cost_mat_cand <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                                 matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
-                                cutoff_distance, ids_from = ids_demand, ids_to = ids_cand)
+                                cutoff, ids_from = ids_demand, ids_to = ids_cand)
   cost_mat_cand <- replace_inf(cost_mat_cand)
 
   cost_mat_exist <- od_to_matrix(matrix_OD_existing_site, matrix_OD_existing_site_from_id,
                                  matrix_OD_existing_site_to_id, matrix_OD_existing_site_dist,
-                                 cutoff_distance, ids_from = ids_demand, ids_to = ids_exist)
+                                 cutoff, ids_from = ids_demand, ids_to = ids_exist)
   cost_mat_exist <- replace_inf(cost_mat_exist)
 
   # baseline_i = distance from demand i to its *nearest competitor* site (row min).

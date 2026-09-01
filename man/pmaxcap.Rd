@@ -20,7 +20,7 @@ pmaxcap(
   matrix_OD_existing_site_from_id = "from_id",
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "distance",
-  cutoff_distance = NULL,
+  cutoff = NULL,
   marginal_cost = 0,
   distance_cost_rate = 1,
   competitor_price,
@@ -63,8 +63,10 @@ by this column. Defaults to 1 if NULL.}
 
 \item{matrix_OD_existing_site_dist}{character or NULL.}
 
-\item{cutoff_distance}{numeric or NULL. Pairs beyond this distance are
-dropped. \code{NULL} (default) means no cutoff.}
+\item{cutoff}{numeric or NULL. Maximum impedance, expressed in the units
+of the OD table's distance column -- which may hold a distance \emph{or} a
+travel time. Pairs beyond it are dropped. \code{NULL} (default) means no
+cutoff.}
 
 \item{marginal_cost}{numeric. Marginal production cost per unit (v).}
 
