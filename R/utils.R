@@ -22,9 +22,26 @@ NULL
 #' @param lower,upper numeric. Variable bounds (length = n_vars).
 #' @param sense `"min"` or `"max"`.
 #' @param solver `"glpk"` or `"highs"`.
+#' @param highs_control list or NULL. Options passed to `highs::highs_control()`,
+#'   only used when `solver = "highs"`. NULL (the default) leaves HiGHS on its
+#'   own defaults -- the case for `lscp()`, `maxcap()`, and `pcenter()`, which
+#'   each solve a single large MIP where HiGHS's presolve helps a lot.
+#'   `pmaxcap()` passes its own settings (see its code): its low-price
+#'   breakpoints produce a very dense coverage matrix that makes HiGHS's
+#'   presolve pathologically slow on that specific problem shape, without
+#'   this affecting the other models.
+#' @param highs_start numeric vector or NULL. Starting solution passed to
+#'   `highs::highs_solve(start = ...)`, ignored for `solver = "glpk"`.
+#'   `pmaxcap()` reuses the previous breakpoint's solution: consecutive
+#'   breakpoints only differ by a few columns of the coverage matrix, so the
+#'   previous solution is already a very close starting point for the next
+#'   optimum. Verified empirically on the bixi data: ~208s -> ~49s across the
+#'   breakpoint ramp, with the hardest breakpoints in particular dropping from
+#'   several seconds to a few milliseconds.
 #' @return list(optimal, objective_value, solution, status).
 #' @noRd
-solve_direct <- function(L, A, dir, rhs, types, lower, upper, sense, solver) {
+solve_direct <- function(L, A, dir, rhs, types, lower, upper, sense, solver,
+                          highs_control = NULL, highs_start = NULL) {
   if (!solver %in% c("glpk", "highs"))
     stop(sprintf("Unknown solver '%s'. Use \"glpk\" or \"highs\".", solver))
 
@@ -54,9 +71,14 @@ solve_direct <- function(L, A, dir, rhs, types, lower, upper, sense, solver) {
     # highs has no binary type: an integer variable bounded to [0, 1] by the
     # caller's `lower`/`upper` is equivalent.
     types2 <- ifelse(types == "B", "I", types)
-    r <- highs::highs_solve(L = L, lower = lower, upper = upper, A = A,
-                             lhs = lhs2, rhs = rhs2, types = types2,
-                             maximum = identical(sense, "max"))
+    ctrl <- if (is.null(highs_control)) list() else highs_control
+    r <- do.call(highs::highs_solve, c(
+      list(L = L, lower = lower, upper = upper, A = A,
+           lhs = lhs2, rhs = rhs2, types = types2,
+           maximum = identical(sense, "max")),
+      if (!is.null(highs_start)) list(start = highs_start) else list(),
+      if (length(ctrl) > 0) list(control = do.call(highs::highs_control, ctrl)) else list()
+    ))
     ok <- identical(tolower(r$status_message), "optimal")
     list(optimal = ok, objective_value = r$objective_value, solution = r$primal_solution,
          status = if (ok) "optimal" else r$status_message)

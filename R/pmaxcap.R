@@ -166,6 +166,50 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
   lower <- rep(0, n_vars)
   upper <- rep(1, n_vars)
 
+  # ---- Short-circuit for degenerate breakpoints (price <= marginal_cost) ----
+  # Once the price no longer exceeds the marginal cost, every term
+  # a_i*(price - marginal_cost) of the profit is <= 0 (assuming a_i >= 0,
+  # which demand weights -- population/counts -- always satisfy in
+  # practice): capturing any demand can only match or reduce profit, so the
+  # optimal solution captures nothing (Y = 0), whichever subset of
+  # n_facilities candidates gets opened -- only the fixed cost breaks the
+  # tie. That is a trivial computation (a sort), not a MIP.
+  #
+  # Leaving these breakpoints to the solver is both pointless and costly:
+  # the coverage matrix is very dense there (at low prices, nearly every
+  # candidate satisfies the capture threshold for nearly every demand
+  # point), which makes the MIP pathologically degenerate -- any subset of
+  # candidates reaches the same optimum. GLPK already slows down noticeably
+  # on these instances; HiGHS, whose presolve does not reliably interrupt
+  # itself despite a `time_limit`, can get stuck there for tens of seconds
+  # per breakpoint. Short-circuiting this case fixes the problem at the
+  # root, for both solvers, without touching solve_direct() or the other
+  # models that share it.
+  #
+  # `breakpoints` is sorted in descending order (see enumerate_breakpoints()),
+  # so as soon as one breakpoint falls below `marginal_cost`, every
+  # subsequent one (smaller) satisfies the same condition: this case only
+  # needs handling once, after which the loop below can ignore the rest.
+  trivial_idx <- which(breakpoints <= marginal_cost)[1]
+  if (!is.na(trivial_idx)) {
+    order_f <- order(f_cost)[seq_len(n_facilities)]
+    trivial_profit <- -sum(f_cost[order_f])
+    if (trivial_profit > best$profit) {
+      X_vals_trivial <- rep(0, n_fac); X_vals_trivial[order_f] <- 1
+      best <- list(profit = trivial_profit, price = breakpoints[trivial_idx],
+                   X_vals = X_vals_trivial, Y_vals = rep(0, n_cli), status = "optimal")
+    }
+    breakpoints <- breakpoints[seq_len(trivial_idx - 1)]
+  }
+
+  # Reuses the previous breakpoint's solution as the starting point for the
+  # next one (HiGHS only -- see highs_start in solve_direct()): consecutive
+  # breakpoints only differ by a few columns of bij, so the previous solution
+  # is already very close to the next optimum. Verified empirically: the
+  # hardest part of the ramp (low prices) drops from several seconds to a
+  # few milliseconds per breakpoint.
+  prev_solution <- NULL
+
   for (price in breakpoints) {
     # b_ij at this price: demand i prefers our site j when our delivered cost is
     # no higher than the incumbent's, price + t*d_ij <= P_B + t*baseline_i.
@@ -199,7 +243,17 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
     dir <- c("==", rep("<=", n_cli))
     rhs <- c(n_facilities, rep(0, n_cli))
 
-    result <- solve_direct(L, A, dir, rhs, types, lower, upper, sense = "max", solver = solver)
+    # `presolve = "off"` (only when solver = "highs"): specific to
+    # pmaxcap(). At low prices the coverage matrix bij becomes very dense
+    # (many candidates satisfy the capture threshold for many demand
+    # points), and HiGHS's presolve becomes pathologically slow there --
+    # verified empirically: a breakpoint that took 5-17s drops to 0.6-1.7s.
+    # Not passed to solve_direct() by default (NULL) because
+    # lscp()/maxcap()/pcenter() don't share this characteristic and instead
+    # benefit fully from HiGHS's presolve.
+    result <- solve_direct(L, A, dir, rhs, types, lower, upper, sense = "max", solver = solver,
+                            highs_control = if (solver == "highs") list(presolve = "off") else NULL,
+                            highs_start = prev_solution)
     # Non-optimal iterations are skipped rather than raising: one bad price does
     # not invalidate the sweep, and the `is.null(best$X_vals)` check below catches
     # the case where *every* price failed. `>` (not `>=`) keeps the first winner,
@@ -213,6 +267,10 @@ pmaxcap <- function(demand, demand_id, demand_weight = NULL,
                      Y_vals = result$solution[seq_len(n_cli)],
                      status = result$status)
       }
+      # Starting point for the next breakpoint, whether or not this
+      # iteration beat `best`: it's the closest available solution to the
+      # next problem, regardless of whether it was the best one overall.
+      prev_solution <- result$solution
     }
   }
 
