@@ -17,7 +17,7 @@ See Details.
 
 ## Details
 
-`bixi_candidates` (5,811 pts): candidate sites from OSM street segments
+`bixi_candidates` (2,743 pts): candidate sites from OSM street segments
 (cycleway/living_street/footway/residential), cut into 100 m lixels,
 excluding slope \> 5%.
 
