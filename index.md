@@ -150,7 +150,6 @@ res <- mclp(
   matrix_OD_existing_site_from_id = "from_id",
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "travel_time_p50",
-  cutoff_distance = 130,
   service_radius = 15, p_facilities = 35  # 25 existing + 10 new
 )
 #> Warning in mclp(demand = bixi_demand, demand_id = "id", demand_weight =

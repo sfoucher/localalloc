@@ -68,7 +68,6 @@ where \(b_{ij} = 1\) if site \(j\) covers demand \(i\) (i.e.
 <span>  matrix_OD_existing_site_from_id <span class="op">=</span> <span class="st">"from_id"</span>,</span>
 <span>  matrix_OD_existing_site_to_id <span class="op">=</span> <span class="st">"to_id"</span>,</span>
 <span>  matrix_OD_existing_site_dist <span class="op">=</span> <span class="st">"distance"</span>,</span>
-<span>  cutoff_distance <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">service_radius</span>,</span>
 <span>  solver <span class="op">=</span> <span class="st">"highs"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -135,13 +134,11 @@ into the solution.</p></dd>
 <dd><p>character or NULL.</p></dd>
 
 
-<dt id="arg-cutoff-distance">cutoff_distance<a class="anchor" aria-label="anchor" href="#arg-cutoff-distance"></a></dt>
-<dd><p>numeric or NULL. Pairs beyond this distance are
-dropped. <code>NULL</code> (default) means no cutoff.</p></dd>
-
-
 <dt id="arg-service-radius">service_radius<a class="anchor" aria-label="anchor" href="#arg-service-radius"></a></dt>
-<dd><p>numeric. Maximum acceptable distance.</p></dd>
+<dd><p>numeric. Maximum acceptable impedance for a facility
+to count as covering a demand point, expressed in the units of the OD
+table's distance column – which may hold a distance <em>or</em> a travel time.
+This is also the cutoff: pairs beyond it get no coefficient at all.</p></dd>
 
 
 <dt id="arg-solver">solver<a class="anchor" aria-label="anchor" href="#arg-solver"></a></dt>

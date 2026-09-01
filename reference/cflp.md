@@ -23,7 +23,7 @@ cflp(
   matrix_OD_candidates_from_id = "from_id",
   matrix_OD_candidates_to_id = "to_id",
   matrix_OD_candidates_dist = "distance",
-  cutoff_distance = NULL,
+  cutoff = NULL,
   candidate_fixed_cost,
   candidate_capacity,
   transport_cost_rate = 1,
@@ -69,10 +69,11 @@ cflp(
 
   character.
 
-- cutoff_distance:
+- cutoff:
 
-  numeric or NULL. Pairs beyond this distance are dropped. `NULL`
-  (default) means no cutoff.
+  numeric or NULL. Maximum impedance, expressed in the units of the OD
+  table's distance column – which may hold a distance *or* a travel
+  time. Pairs beyond it are dropped. `NULL` (default) means no cutoff.
 
 - candidate_fixed_cost:
 

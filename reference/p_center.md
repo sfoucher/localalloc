@@ -31,7 +31,7 @@ p_center(
   matrix_OD_existing_site_from_id = "from_id",
   matrix_OD_existing_site_to_id = "to_id",
   matrix_OD_existing_site_dist = "distance",
-  cutoff_distance = NULL,
+  cutoff = NULL,
   p_facilities,
   solver = "highs"
 )
@@ -95,10 +95,11 @@ p_center(
 
   character or NULL.
 
-- cutoff_distance:
+- cutoff:
 
-  numeric or NULL. Pairs beyond this distance are dropped. `NULL`
-  (default) means no cutoff.
+  numeric or NULL. Maximum impedance, expressed in the units of the OD
+  table's distance column – which may hold a distance *or* a travel
+  time. Pairs beyond it are dropped. `NULL` (default) means no cutoff.
 
 - p_facilities:
 
