@@ -82,7 +82,8 @@ and \(M\) is a sufficiently large constant (computed internally as
 
 
 <dl><dt id="arg-candidate">candidate<a class="anchor" aria-label="anchor" href="#arg-candidate"></a></dt>
-<dd><p>sf POINT. Candidate sites.</p></dd>
+<dd><p>sf POINT. Candidate sites. Its row order is not neutral
+when the distance matrix is asymmetric; see Details.</p></dd>
 
 
 <dt id="arg-candidate-id">candidate_id<a class="anchor" aria-label="anchor" href="#arg-candidate-id"></a></dt>
@@ -92,7 +93,9 @@ and \(M\) is a sufficiently large constant (computed internally as
 <dt id="arg-matrix-od-candidates">matrix_OD_candidates<a class="anchor" aria-label="anchor" href="#arg-matrix-od-candidates"></a></dt>
 <dd><p>data.frame. Long candidate-to-candidate
 distance table (from_id/to_id/distance) – both directions of each
-pair should be supplied.</p></dd>
+pair should be supplied. Pairs missing from the upper triangle are
+warned about and given a large finite distance; see Details for how
+directions that disagree are resolved.</p></dd>
 
 
 <dt id="arg-matrix-od-candidates-from-id">matrix_OD_candidates_from_id<a class="anchor" aria-label="anchor" href="#arg-matrix-od-candidates-from-id"></a></dt>
@@ -118,6 +121,28 @@ pair should be supplied.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>localalloc_result</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="asymmetric-matrices-the-row-order-of-candidate-affects-the-answer">Asymmetric matrices: the row order of <code>candidate</code> affects the answer<a class="anchor" aria-label="anchor" href="#asymmetric-matrices-the-row-order-of-candidate-affects-the-answer"></a></h2>
+    <p>The dispersion constraint is symmetric in \((i, j)\), so the model builds
+one row per <em>unordered</em> pair and reads only the upper triangle of the
+distance matrix. When a pair disagrees between its two directions –
+<code>A -&gt; B = 10</code> but <code>B -&gt; A = 15</code>, routine with travel times because of
+one-way streets and slope – the two values are not combined, averaged or
+reconciled. <strong>One of them is silently discarded</strong>, and which one depends on
+the order the sites appear in <code>candidate</code>: the value kept is the one whose
+<code>from_id</code> comes first.</p>
+<p>This is not flagged by any check, because an asymmetric matrix is legitimate
+data. But it does mean an incidental reordering upstream (a
+<code>candidate[order(candidate$id), ]</code>, a different <code>dplyr</code> pipeline) can change
+both <code>min_distance</code> and the sites returned, on identical input:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># candidate order A,B,C  -&gt;  sites B,C  |  min_distance = 5750</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co"># candidate order A,C,B  -&gt;  sites A,C  |  min_distance = 4950</span></span></code></pre><p></p></div>
+<p>If your matrix is asymmetric, symmetrize it yourself before calling <code>dp()</code>
+so the choice is explicit rather than an artefact of row order. Keeping the
+<strong>smaller</strong> of the two directions is the conservative option: <code>min_distance</code>
+then reads as a guarantee – no two selected sites are closer than \(D\) –
+that holds whichever way each pair is travelled.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
