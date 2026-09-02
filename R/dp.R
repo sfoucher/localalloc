@@ -13,11 +13,42 @@
 #' and \eqn{M} is a sufficiently large constant (computed internally as
 #' 2 times the maximum distance in the matrix).
 #'
-#' @param candidate sf POINT. Candidate sites.
+#' @details
+#' # Asymmetric matrices: the row order of `candidate` affects the answer
+#'
+#' The dispersion constraint is symmetric in \eqn{(i, j)}, so the model builds
+#' one row per *unordered* pair and reads only the upper triangle of the
+#' distance matrix. When a pair disagrees between its two directions --
+#' `A -> B = 10` but `B -> A = 15`, routine with travel times because of
+#' one-way streets and slope -- the two values are not combined, averaged or
+#' reconciled. **One of them is silently discarded**, and which one depends on
+#' the order the sites appear in `candidate`: the value kept is the one whose
+#' `from_id` comes first.
+#'
+#' This is not flagged by any check, because an asymmetric matrix is legitimate
+#' data. But it does mean an incidental reordering upstream (a
+#' `candidate[order(candidate$id), ]`, a different `dplyr` pipeline) can change
+#' both `min_distance` and the sites returned, on identical input:
+#'
+#' ```
+#' # candidate order A,B,C  ->  sites B,C  |  min_distance = 5750
+#' # candidate order A,C,B  ->  sites A,C  |  min_distance = 4950
+#' ```
+#'
+#' If your matrix is asymmetric, symmetrize it yourself before calling `dp()`
+#' so the choice is explicit rather than an artefact of row order. Keeping the
+#' **smaller** of the two directions is the conservative option: `min_distance`
+#' then reads as a guarantee -- no two selected sites are closer than \eqn{D} --
+#' that holds whichever way each pair is travelled.
+#'
+#' @param candidate sf POINT. Candidate sites. Its row order is not neutral
+#'   when the distance matrix is asymmetric; see Details.
 #' @param candidate_id character. Unique id column in `candidate`.
 #' @param matrix_OD_candidates data.frame. Long candidate-to-candidate
 #'   distance table (from_id/to_id/distance) -- both directions of each
-#'   pair should be supplied.
+#'   pair should be supplied. Pairs missing from the upper triangle are
+#'   warned about and given a large finite distance; see Details for how
+#'   directions that disagree are resolved.
 #' @param matrix_OD_candidates_from_id character.
 #' @param matrix_OD_candidates_to_id character.
 #' @param matrix_OD_candidates_dist character.
@@ -58,15 +89,103 @@ dp <- function(candidate, candidate_id,
   dist_mat <- od_to_matrix(matrix_OD_candidates, matrix_OD_candidates_from_id,
                            matrix_OD_candidates_to_id, matrix_OD_candidates_dist,
                            cutoff = Inf, ids_from = ids_cand, ids_to = ids_cand)
+
+  # An OD table holding no candidate-to-candidate pair leaves `dist_mat` entirely
+  # `Inf`, and that fails *silently* rather than loudly: the diagonal is zeroed
+  # just below, `replace_inf()` then derives its big-M as `max(finite) * 10` --
+  # which is now `0` -- so every pair reads as distance 0, the dispersion rows
+  # collapse to `D <= 0`, and the solve happily reports `min_distance = 0` for an
+  # arbitrary set of p sites. The usual cause is passing the demand-to-candidate
+  # OD table the other nine models take: its `from_id`s are demand ids and match
+  # no candidate, so nothing is ever scattered into the matrix. Report the id
+  # overlap in both columns, since that is what pins down which table was passed.
+  #
+  # `finite_cells` is computed once and reused by the coverage warning below;
+  # comparing counts rather than subsetting an off-diagonal mask keeps this to a
+  # single n x n allocation, and DP's candidate sets are already the largest
+  # thing in memory here.
+  finite_cells <- is.finite(dist_mat)
+  if (sum(finite_cells) <= sum(diag(finite_cells))) {
+    n_from <- sum(ids_cand %in% as.character(matrix_OD_candidates[[matrix_OD_candidates_from_id]]))
+    n_to   <- sum(ids_cand %in% as.character(matrix_OD_candidates[[matrix_OD_candidates_to_id]]))
+    stop(sprintf(paste0(
+      "`matrix_OD_candidates` contains no candidate-to-candidate pair ",
+      "(%d of %d candidate id(s) appear in '%s', %d in '%s'). `dp()` needs a ",
+      "pairwise distance table *between candidates* -- both '%s' and '%s' must ",
+      "be drawn from `candidate` -- not a demand-to-candidate table."),
+      n_from, n_fac, matrix_OD_candidates_from_id,
+      n_to, matrix_OD_candidates_to_id,
+      matrix_OD_candidates_from_id, matrix_OD_candidates_to_id))
+  }
+
+  # Some pairs present, but not all. Only the upper triangle is read further
+  # down, and every cell of it still `Inf` is about to be handed a fabricated
+  # distance by `replace_inf()` -- `max * 10`, i.e. "further apart than any real
+  # pair". For a dispersion objective that is the worst possible direction to err
+  # in: missing data does not merely blur the answer, it makes the unknown pairs
+  # look ideal and biases the selection towards the very sites nothing is known
+  # about. Warn rather than fail, since a deliberately partial matrix is a
+  # legitimate choice once the caller knows this is the consequence.
+  #
+  # `reverse_only` is broken out because it has a different and much cheaper fix:
+  # those pairs *are* in the OD table, just under the opposite (to, from)
+  # orientation, so symmetrizing the table recovers them with no new routing.
+  # This is the likeliest cause of a partial matrix, since routers commonly
+  # return one row per ordered pair and `dp()` needs both.
+  upper <- upper.tri(finite_cells)
+  upper_finite <- finite_cells[upper]
+  n_possible <- n_fac * (n_fac - 1) / 2
+  n_missing <- n_possible - sum(upper_finite)
+  if (n_missing > 0) {
+    # t(finite_cells)[i, j] is finite_cells[j, i]: the same pair measured the
+    # other way round.
+    reverse_only <- sum(!upper_finite & t(finite_cells)[upper])
+    msg <- sprintf(paste0(
+      "%d of %d candidate pair(s) (%.1f%%) are missing from ",
+      "`matrix_OD_candidates`. Missing pairs are given a large finite distance, ",
+      "which reads as 'maximally far apart' and therefore makes them attractive ",
+      "to the dispersion objective -- `min_distance` and the selected sites may ",
+      "be driven by absent data rather than by real distances."),
+      n_missing, n_possible, 100 * n_missing / n_possible)
+    if (reverse_only > 0)
+      msg <- paste0(msg, sprintf(
+        " %d of them are present in the opposite direction only; supply both directions of each pair.",
+        reverse_only))
+    warning(msg, call. = FALSE)
+  }
+
+  # TODO: handle pairs whose two directions *disagree*. Nothing below reconciles
+  # `dist_mat[i, j]` with `dist_mat[j, i]`: only the upper triangle is read, so
+  # the value kept is whichever site comes first in `candidate` and the other is
+  # silently dropped. Row order therefore changes both `min_distance` and the
+  # selected sites on identical input (documented under Details). With travel
+  # times rather than metres this is the normal case, not an edge case -- one-way
+  # streets and slope make d(A,B) != d(B,A) routine.
+  #
+  # Two options, deliberately left out for now because they change results on
+  # existing calls:
+  #   * symmetrize to the minimum -- `pmin(dist_mat, t(dist_mat))` right here,
+  #     which makes `min_distance` a guarantee that holds in both travel
+  #     directions. Costs one more n x n allocation.
+  #   * or just warn past a threshold, e.g. when the relative gap
+  #     `|d_ij - d_ji| / pmin(d_ij, d_ji)` exceeds some tolerance on any pair,
+  #     leaving the choice to the caller.
+  # A `symmetrize = c("none", "min")` argument defaulting to "none" would keep
+  # this backward compatible. Whichever lands, it belongs above `replace_inf()`,
+  # since the fabricated big-M values below would otherwise be compared against
+  # real distances.
+
   # A site is at distance 0 from itself. The OD table usually omits those rows,
   # leaving `Inf` on the diagonal; the diagonal is never read below (only
   # upper-triangle pairs are), but zeroing it keeps `max(dist_mat)` honest.
   diag(dist_mat) <- 0
   # Any pair still `Inf` is missing from the OD table. There is no "forbidden
   # pair" concept in DP -- every pair needs a constraint row -- so missing pairs
-  # are given a large finite distance. Caveat: that reads as "maximally far
-  # apart", which makes such pairs *attractive* to a dispersion objective. Supply
-  # the complete pairwise matrix if the result is to be trusted.
+  # are given a large finite distance here. That is the substitution the checks
+  # above exist to police: it reads as "maximally far apart", which makes such
+  # pairs *attractive* to a dispersion objective. The caller has been warned with
+  # a count by this point; supply the complete pairwise matrix if the result is
+  # to be trusted.
   dist_mat <- replace_inf(dist_mat)
   # Big-M must exceed any value D could take, i.e. the largest pairwise distance;
   # 2x that is comfortably above it while staying in the same order of magnitude
