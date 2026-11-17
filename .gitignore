@@ -7,3 +7,4 @@
 # Local Claude Code notes
 .claude.local.md
 pkgdown-site
+inst/doc

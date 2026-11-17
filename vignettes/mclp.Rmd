@@ -1,0 +1,19 @@
+---
+title: "Application of the Maximal Covering Location Problem"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Application of the Maximal Covering Location Problem}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(localalloc)
+```
