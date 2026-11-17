@@ -16,13 +16,16 @@ dp(
 )
 }
 \arguments{
-\item{candidate}{sf POINT. Candidate sites.}
+\item{candidate}{sf POINT. Candidate sites. Its row order is not neutral
+when the distance matrix is asymmetric; see Details.}
 
 \item{candidate_id}{character. Unique id column in \code{candidate}.}
 
 \item{matrix_OD_candidates}{data.frame. Long candidate-to-candidate
 distance table (from_id/to_id/distance) -- both directions of each
-pair should be supplied.}
+pair should be supplied. Pairs missing from the upper triangle are
+warned about and given a large finite distance; see Details for how
+directions that disagree are resolved.}
 
 \item{matrix_OD_candidates_from_id}{character.}
 
@@ -50,3 +53,29 @@ where \eqn{D} = \code{min_distance} in the output, \eqn{P} = \code{p_facilities}
 and \eqn{M} is a sufficiently large constant (computed internally as
 2 times the maximum distance in the matrix).
 }
+\section{Asymmetric matrices: the row order of \code{candidate} affects the answer}{
+The dispersion constraint is symmetric in \eqn{(i, j)}, so the model builds
+one row per \emph{unordered} pair and reads only the upper triangle of the
+distance matrix. When a pair disagrees between its two directions --
+\code{A -> B = 10} but \code{B -> A = 15}, routine with travel times because of
+one-way streets and slope -- the two values are not combined, averaged or
+reconciled. \strong{One of them is silently discarded}, and which one depends on
+the order the sites appear in \code{candidate}: the value kept is the one whose
+\code{from_id} comes first.
+
+This is not flagged by any check, because an asymmetric matrix is legitimate
+data. But it does mean an incidental reordering upstream (a
+\code{candidate[order(candidate$id), ]}, a different \code{dplyr} pipeline) can change
+both \code{min_distance} and the sites returned, on identical input:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{# candidate order A,B,C  ->  sites B,C  |  min_distance = 5750
+# candidate order A,C,B  ->  sites A,C  |  min_distance = 4950
+}\if{html}{\out{</div>}}
+
+If your matrix is asymmetric, symmetrize it yourself before calling \code{dp()}
+so the choice is explicit rather than an artefact of row order. Keeping the
+\strong{smaller} of the two directions is the conservative option: \code{min_distance}
+then reads as a guarantee -- no two selected sites are closer than \eqn{D} --
+that holds whichever way each pair is travelled.
+}
+
