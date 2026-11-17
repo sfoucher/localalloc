@@ -7,12 +7,7 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
+
 This vignette describes how to use the p-median function in `localalloc` that can help to maximize average accessibility across the network. It will show a step-by-step example with all arguments.
 
 # Application of the p-median model with the addition of Bixi stations
@@ -85,6 +80,7 @@ print(pmedian_highs$total_cost)
 You can also create a map for better visualization with `tmap`:
 ```{r, echo=TRUE, eval=FALSE}
 library(tmap)
+library(dplyr)
 # Filter selected
 sf_selected_candidates <- filter(pmedian_highs$sf_selected,source == "candidate")
 sf_selected_existing_sites <- filter(pmedian_highs$sf_selected,source == "existing")
