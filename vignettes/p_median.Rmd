@@ -7,6 +7,12 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
 This vignette describes how to use the p-median function in `localalloc` that can help to maximize average accessibility across the network. It will show a step-by-step example with all arguments.
 
 # Application of the p-median model with the addition of Bixi stations
@@ -131,4 +137,9 @@ tm_title_in("P-median",
             size = 1.2,
             position = tm_pos_in("left", "top"),
             fontface = "bold")
+```
+```{r, echo=FALSE}
+library(knitr)
+figure <- system.file("figures", "p_median.png", package = "localalloc")
+knitr::include_graphics(figure)
 ```
